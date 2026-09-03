@@ -1,18 +1,22 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.engine import URL
-from dotenv import load_dotenv
-import os
 
-load_dotenv()
+from config import (
+    DATABASE_HOST,
+    DATABASE_NAME,
+    DATABASE_USER,
+    DATABASE_PASSWORD,
+    DATABASE_PORT
+)
 
 DATABASE_URL = URL.create(
     drivername="mysql+pymysql",
-    username=os.getenv("DATABASE_USER"),
-    password=os.getenv("DATABASE_PASSWORD"),
-    host=os.getenv("DATABASE_HOST"),
-    port=int(os.getenv("DATABASE_PORT")),
-    database=os.getenv("DATABASE_NAME")
+    username=DATABASE_USER,
+    password=DATABASE_PASSWORD,
+    host=DATABASE_HOST,
+    port=int(DATABASE_PORT),
+    database=DATABASE_NAME
 )
 
 engine = create_engine(DATABASE_URL)
