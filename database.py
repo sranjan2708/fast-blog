@@ -10,6 +10,7 @@ from config import (
     DATABASE_PORT
 )
 
+
 DATABASE_URL = URL.create(
     drivername="mysql+pymysql",
     username=DATABASE_USER,
@@ -19,8 +20,18 @@ DATABASE_URL = URL.create(
     database=DATABASE_NAME
 )
 
+
 engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(bind=engine)
 
 Base = declarative_base()
+
+
+def get_db():
+    db = SessionLocal()
+
+    try:
+        yield db
+    finally:
+        db.close()
