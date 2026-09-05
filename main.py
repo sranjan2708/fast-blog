@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Form, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from pydantic import ValidationError
 
 from database import get_db
@@ -34,7 +35,9 @@ def register_page(request: Request):
         request=request,
         name="register.html",
         context={
-            "message": None
+            "message": None,
+            "username": "",
+            "email": ""
         }
     )
 
@@ -48,7 +51,7 @@ def register_user(
     db: Session = Depends(get_db)
 ):
 
-    # CHANGE 1: Handle Pydantic validation errors
+    # Handle Pydantic validation errors
     try:
         user_data = UserCreate(
             username=username,
@@ -57,11 +60,37 @@ def register_user(
         )
 
     except ValidationError as error:
+
+        error_details = error.errors()[0]
+
+        field = error_details["loc"][0]
+        error_type = error_details["type"]
+
+        if field == "username" and error_type == "string_too_short":
+            message = "Username must be at least 3 characters."
+
+        elif field == "username" and error_type == "string_too_long":
+            message = "Username must not exceed 50 characters."
+
+        elif field == "email":
+            message = "Please enter a valid email address."
+
+        elif field == "password" and error_type == "string_too_short":
+            message = "Password must be at least 8 characters."
+
+        elif field == "password" and error_type == "string_too_long":
+            message = "Password must not exceed 128 characters."
+
+        else:
+            message = "Please check your registration details."
+
         return templates.TemplateResponse(
             request=request,
             name="register.html",
             context={
-                "message": str(error)
+                "message": message,
+                "username": username,
+                "email": email
             }
         )
 
@@ -74,7 +103,9 @@ def register_user(
             request=request,
             name="register.html",
             context={
-                "message": "Username already exists"
+                "message": "Username already exists",
+                "username": username,
+                "email": email
             }
         )
 
@@ -87,7 +118,9 @@ def register_user(
             request=request,
             name="register.html",
             context={
-                "message": "Email already exists"
+                "message": "Email already exists",
+                "username": username,
+                "email": email
             }
         )
 
@@ -99,16 +132,32 @@ def register_user(
         password=hashed_password
     )
 
-    db.add(new_user)
+    # CHANGE 1: Handle database errors
+    try:
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
 
-    db.commit()
+    except IntegrityError:
+        # CHANGE 2: Roll back the failed transaction
+        db.rollback()
 
-    db.refresh(new_user)
+        return templates.TemplateResponse(
+            request=request,
+            name="register.html",
+            context={
+                "message": "Unable to register user. Username or email may already exist.",
+                "username": username,
+                "email": email
+            }
+        )
 
     return templates.TemplateResponse(
         request=request,
         name="register.html",
         context={
-            "message": "User registered successfully"
+            "message": "User registered successfully",
+            "username": "",
+            "email": ""
         }
     )
