@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from database import Base
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -11,5 +12,9 @@ class User(Base):
     password = Column(String(255), nullable=False)
     bio = Column(String(500), nullable=True)
 
-
     posts = relationship("Post", back_populates="user")
+
+    auth_sessions = relationship(
+        "UserSession",
+        back_populates="user"
+    )
