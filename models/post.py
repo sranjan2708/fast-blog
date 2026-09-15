@@ -15,6 +15,13 @@ class Post(Base):
 
     content = Column(String(5000), nullable=False)
 
+    status = Column(
+        String(20),
+        nullable=False,
+        default="draft",
+        server_default="draft"
+    )
+
     user_id = Column(
         Integer,
         ForeignKey("users.id"),
@@ -40,7 +47,7 @@ class Post(Base):
     )
 
     categories = relationship(
-    "Category",
-    secondary=PostCategory.__table__,
-    back_populates="posts"
+        "Category",
+        secondary=PostCategory.__table__,
+        back_populates="posts"
     )
