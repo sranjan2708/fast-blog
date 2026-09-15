@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from pydantic import ValidationError
 
-from auth import require_current_user
+from auth import require_current_user, require_admin
 from database import get_db
 from schemas.user import UserCreate
 from models.user import User
@@ -133,7 +133,8 @@ def register_user(
     new_user = User(
         username=user_data.username,
         email=user_data.email,
-        password=hashed_password
+        password=hashed_password,
+        role="user"
     )
 
     # Handle database errors
@@ -252,7 +253,20 @@ def profile(
     return {
         "message": "You are logged in.",
         "username": user.username,
-        "email": user.email
+        "email": user.email,
+        "role": user.role
+    }
+
+
+# Phase 9: Admin-only protected route
+@app.get("/admin")
+def admin_dashboard(
+    user: User = Depends(require_admin)
+):
+    return {
+        "message": "Welcome to the admin area.",
+        "username": user.username,
+        "role": user.role
     }
 
 

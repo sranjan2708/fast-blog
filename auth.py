@@ -66,3 +66,15 @@ def require_current_user(
         )
 
     return user
+
+
+def require_admin(
+    current_user: User = Depends(require_current_user)
+):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Admin access required."
+        )
+
+    return current_user

@@ -12,6 +12,12 @@ class User(Base):
     password = Column(String(255), nullable=False)
     bio = Column(String(500), nullable=True)
 
+    role = Column(
+        String(20),
+        nullable=False,
+        default="user"
+    )
+
     posts = relationship("Post", back_populates="user")
 
     auth_sessions = relationship(
