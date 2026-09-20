@@ -3,8 +3,9 @@ from datetime import datetime, timedelta
 from fastapi import FastAPI, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import or_
 from pydantic import ValidationError
 
 from auth import require_current_user, require_admin
@@ -15,6 +16,7 @@ from models.user import User
 from models.post import Post
 from models.user_session import UserSession
 from security import hash_password, verify_password, generate_session_id
+from utils import generate_unique_slug
 
 
 app = FastAPI()
@@ -279,13 +281,13 @@ def admin_dashboard(
 
 
 # ==========================================================
-# Phase 10: Blog Post CRUD
+# Phase 11: Slugs, Search, Filtering & Pagination
 # ==========================================================
 
 
-# -----------------------------
+# ==========================================================
 # Create Post - GET
-# -----------------------------
+# ==========================================================
 
 @app.get("/posts/create", response_class=HTMLResponse)
 def create_post_page(
@@ -301,9 +303,9 @@ def create_post_page(
     )
 
 
-# -----------------------------
+# ==========================================================
 # Create Post - POST
-# -----------------------------
+# ==========================================================
 
 @app.post("/posts/create", response_class=HTMLResponse)
 def create_post(
@@ -330,7 +332,13 @@ def create_post(
             }
         )
 
+    slug = generate_unique_slug(
+        post_data.title,
+        db
+    )
+
     new_post = Post(
+        slug=slug,
         title=post_data.title,
         content=post_data.content,
         status=post_data.status,
@@ -342,36 +350,156 @@ def create_post(
     db.refresh(new_post)
 
     return RedirectResponse(
-        url=f"/posts/{new_post.id}",
+        url=f"/posts/{new_post.slug}",
         status_code=303
     )
 
 
-# -----------------------------
-# List Posts
-# -----------------------------
+# ==========================================================
+# List Posts + Search + Filtering + Sorting + Pagination
+# ==========================================================
 
 @app.get("/posts", response_class=HTMLResponse)
 def post_list(
     request: Request,
+    search: str = "",
+    status: str = "",
+    sort: str = "newest",
+    page: int = 1,
     db: Session = Depends(get_db)
 ):
-    posts = db.query(Post).order_by(
-        Post.created_at.desc()
+
+    # Number of posts displayed on each page
+    posts_per_page = 5
+
+    # Prevent invalid page numbers
+    if page < 1:
+        page = 1
+
+    # ------------------------------------------------------
+    # Start with all posts
+    # ------------------------------------------------------
+
+    query = db.query(Post)
+
+    # ------------------------------------------------------
+    # Search
+    # ------------------------------------------------------
+
+    if search.strip():
+        search_term = f"%{search.strip()}%"
+
+        query = query.filter(
+            or_(
+                Post.title.like(search_term),
+                Post.content.like(search_term)
+            )
+        )
+
+    # ------------------------------------------------------
+    # Filtering by Status
+    # ------------------------------------------------------
+
+    # Allow only the statuses used by the application
+    if status not in ("", "draft", "published"):
+        status = ""
+
+    if status:
+        query = query.filter(
+            Post.status == status
+        )
+
+    # ------------------------------------------------------
+    # Count total matching posts
+    # ------------------------------------------------------
+    #
+    # We count before applying ORDER BY.
+    # The count only needs the filtering conditions.
+    #
+
+    total_posts = query.count()
+
+    # ------------------------------------------------------
+    # Calculate total pages
+    # ------------------------------------------------------
+
+    total_pages = (
+        total_posts + posts_per_page - 1
+    ) // posts_per_page
+
+    # If requested page is beyond the last page,
+    # move back to the last available page.
+    if total_pages > 0 and page > total_pages:
+        page = total_pages
+
+    # ------------------------------------------------------
+    # Sorting
+    # ------------------------------------------------------
+
+    if sort == "oldest":
+
+        query = query.order_by(
+            Post.created_at.asc()
+        )
+
+    else:
+
+        # Default sorting
+        # Also handles invalid sort values
+        sort = "newest"
+
+        query = query.order_by(
+            Post.created_at.desc()
+        )
+
+    # ------------------------------------------------------
+    # Calculate OFFSET
+    # ------------------------------------------------------
+
+    offset = (
+        page - 1
+    ) * posts_per_page
+
+    # ------------------------------------------------------
+    # Fetch only the posts needed for this page
+    # ------------------------------------------------------
+    #
+    # joinedload(Post.user) eagerly loads the related user
+    # in the same database operation.
+    #
+    # This avoids unnecessary additional queries when the
+    # template accesses:
+    #
+    #     post.user.username
+    #
+    # ------------------------------------------------------
+
+    posts = query.options(
+        joinedload(Post.user)
+    ).offset(
+        offset
+    ).limit(
+        posts_per_page
     ).all()
 
     return templates.TemplateResponse(
         request=request,
         name="posts.html",
         context={
-            "posts": posts
+            "posts": posts,
+            "search": search,
+            "status": status,
+            "sort": sort,
+            "page": page,
+            "total_pages": total_pages,
+            "total_posts": total_posts
         }
     )
 
 
-# -----------------------------
+# ==========================================================
 # Edit Post - GET
-# -----------------------------
+# ==========================================================
 
 @app.get("/posts/{post_id}/edit", response_class=HTMLResponse)
 def edit_post_page(
@@ -418,9 +546,9 @@ def edit_post_page(
     )
 
 
-# -----------------------------
+# ==========================================================
 # Edit Post - POST
-# -----------------------------
+# ==========================================================
 
 @app.post("/posts/{post_id}/edit", response_class=HTMLResponse)
 def edit_post(
@@ -481,28 +609,33 @@ def edit_post(
     post.content = post_data.content
     post.status = post_data.status
 
+    # Keep the existing slug unchanged
     db.commit()
     db.refresh(post)
 
     return RedirectResponse(
-        url=f"/posts/{post.id}",
+        url=f"/posts/{post.slug}",
         status_code=303
     )
 
 
-# -----------------------------
-# Post Detail
-# -----------------------------
+# ==========================================================
+# Post Detail - Slug Based
+# ==========================================================
 
-@app.get("/posts/{post_id}", response_class=HTMLResponse)
+@app.get("/posts/{slug}", response_class=HTMLResponse)
 def post_detail(
     request: Request,
-    post_id: int,
+    slug: str,
     user: User = Depends(require_current_user),
     db: Session = Depends(get_db)
 ):
-    post = db.query(Post).filter(
-        Post.id == post_id
+    # Eagerly load the related user because the post detail
+    # template may access post.user.username.
+    post = db.query(Post).options(
+        joinedload(Post.user)
+    ).filter(
+        Post.slug == slug
     ).first()
 
     if not post:
@@ -527,9 +660,9 @@ def post_detail(
     )
 
 
-# -----------------------------
+# ==========================================================
 # Delete Post
-# -----------------------------
+# ==========================================================
 
 @app.post("/posts/{post_id}/delete")
 def delete_post(
@@ -549,7 +682,7 @@ def delete_post(
 
     if post.user_id != user.id:
         return RedirectResponse(
-            url=f"/posts/{post.id}",
+            url=f"/posts/{post.slug}",
             status_code=303
         )
 

@@ -4,6 +4,164 @@
 
 <h1>All Posts</h1>
 
+<a href="/posts/create">Create New Post</a>
+
+<hr>
+
+<!-- Search -->
+
+<form method="get" action="/posts">
+
+    <input
+        type="text"
+        name="search"
+        placeholder="Search posts..."
+        value="{{ search }}"
+    >
+
+    <!-- Preserve sorting -->
+    <input
+        type="hidden"
+        name="sort"
+        value="{{ sort }}"
+    >
+
+    <!-- Preserve status filter -->
+    <input
+        type="hidden"
+        name="status"
+        value="{{ status }}"
+    >
+
+    <button type="submit">
+        Search
+    </button>
+
+</form>
+
+
+{% if search %}
+
+    <p>
+        Search results for:
+        <strong>{{ search }}</strong>
+    </p>
+
+{% endif %}
+
+
+<hr>
+
+
+<!-- Sorting -->
+
+<form method="get" action="/posts">
+
+    <!-- Preserve search -->
+    <input
+        type="hidden"
+        name="search"
+        value="{{ search }}"
+    >
+
+    <!-- Preserve status -->
+    <input
+        type="hidden"
+        name="status"
+        value="{{ status }}"
+    >
+
+    <label for="sort">
+        Sort by:
+    </label>
+
+    <select
+        name="sort"
+        id="sort"
+        onchange="this.form.submit()"
+    >
+
+        <option
+            value="newest"
+            {% if sort == "newest" %}selected{% endif %}
+        >
+            Newest
+        </option>
+
+        <option
+            value="oldest"
+            {% if sort == "oldest" %}selected{% endif %}
+        >
+            Oldest
+        </option>
+
+    </select>
+
+</form>
+
+
+<hr>
+
+
+<!-- Status Filtering -->
+
+<form method="get" action="/posts">
+
+    <!-- Preserve search -->
+    <input
+        type="hidden"
+        name="search"
+        value="{{ search }}"
+    >
+
+    <!-- Preserve sorting -->
+    <input
+        type="hidden"
+        name="sort"
+        value="{{ sort }}"
+    >
+
+    <label for="status">
+        Filter by Status:
+    </label>
+
+    <select
+        name="status"
+        id="status"
+        onchange="this.form.submit()"
+    >
+
+        <option
+            value=""
+            {% if status == "" %}selected{% endif %}
+        >
+            All
+        </option>
+
+        <option
+            value="published"
+            {% if status == "published" %}selected{% endif %}
+        >
+            Published
+        </option>
+
+        <option
+            value="draft"
+            {% if status == "draft" %}selected{% endif %}
+        >
+            Draft
+        </option>
+
+    </select>
+
+</form>
+
+
+<hr>
+
+
+<!-- Posts -->
+
 {% if posts %}
 
     {% for post in posts %}
@@ -11,9 +169,13 @@
         <article>
 
             <h2>
-                <a href="/posts/{{ post.id }}">
+
+                <a href="/posts/{{ post.slug }}">
+
                     {{ post.title }}
+
                 </a>
+
             </h2>
 
             <p>
@@ -36,7 +198,44 @@
 
 {% else %}
 
-    <p>No posts available.</p>
+    <p>No posts found.</p>
+
+{% endif %}
+
+
+<!-- Pagination -->
+
+{% if total_pages > 1 %}
+
+    <div>
+
+        {% if page > 1 %}
+
+            <a
+                href="/posts?page={{ page - 1 }}&sort={{ sort }}&status={{ status }}{% if search %}&search={{ search }}{% endif %}"
+            >
+                Previous
+            </a>
+
+        {% endif %}
+
+
+        <span>
+            Page {{ page }} of {{ total_pages }}
+        </span>
+
+
+        {% if page < total_pages %}
+
+            <a
+                href="/posts?page={{ page + 1 }}&sort={{ sort }}&status={{ status }}{% if search %}&search={{ search }}{% endif %}"
+            >
+                Next
+            </a>
+
+        {% endif %}
+
+    </div>
 
 {% endif %}
 

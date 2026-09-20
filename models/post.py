@@ -11,6 +11,13 @@ class Post(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
+    slug = Column(
+        String(250),
+        unique=True,
+        nullable=False,
+        index=True
+    )
+
     title = Column(String(200), nullable=False)
 
     content = Column(String(5000), nullable=False)
