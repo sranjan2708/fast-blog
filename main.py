@@ -10,7 +10,9 @@ from pydantic import ValidationError
 from auth import require_current_user, require_admin
 from database import get_db
 from schemas.user import UserCreate
+from schemas.post import PostCreate, PostUpdate
 from models.user import User
+from models.post import Post
 from models.user_session import UserSession
 from security import hash_password, verify_password, generate_session_id
 
@@ -19,6 +21,10 @@ app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
 
+
+# ==========================================================
+# Home
+# ==========================================================
 
 @app.get("/")
 def home(request: Request):
@@ -32,6 +38,10 @@ def home(request: Request):
         }
     )
 
+
+# ==========================================================
+# Registration
+# ==========================================================
 
 @app.get("/register", response_class=HTMLResponse)
 def register_page(request: Request):
@@ -54,8 +64,6 @@ def register_user(
     password: str = Form(),
     db: Session = Depends(get_db)
 ):
-
-    # Handle Pydantic validation errors
     try:
         user_data = UserCreate(
             username=username,
@@ -64,9 +72,7 @@ def register_user(
         )
 
     except ValidationError as error:
-
         error_details = error.errors()[0]
-
         field = error_details["loc"][0]
         error_type = error_details["type"]
 
@@ -137,7 +143,6 @@ def register_user(
         role="user"
     )
 
-    # Handle database errors
     try:
         db.add(new_user)
         db.commit()
@@ -167,7 +172,10 @@ def register_user(
     )
 
 
-# Phase 8: Login page
+# ==========================================================
+# Login
+# ==========================================================
+
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
     return templates.TemplateResponse(
@@ -184,13 +192,10 @@ def login_user(
     password: str = Form(),
     db: Session = Depends(get_db)
 ):
-
-    # Find the user by email
     user = db.query(User).filter(
         User.email == email
     ).first()
 
-    # Check whether the user exists
     if not user:
         return templates.TemplateResponse(
             request=request,
@@ -201,7 +206,6 @@ def login_user(
             }
         )
 
-    # Verify the entered password against the stored password hash
     if not verify_password(password, user.password):
         return templates.TemplateResponse(
             request=request,
@@ -212,10 +216,8 @@ def login_user(
             }
         )
 
-    # Credentials are correct
     session_id = generate_session_id()
 
-    # Create a new login session
     new_session = UserSession(
         session_id=session_id,
         user_id=user.id,
@@ -245,7 +247,10 @@ def login_user(
     return response
 
 
-# Protected route
+# ==========================================================
+# Profile
+# ==========================================================
+
 @app.get("/profile")
 def profile(
     user: User = Depends(require_current_user)
@@ -258,7 +263,10 @@ def profile(
     }
 
 
-# Phase 9: Admin-only protected route
+# ==========================================================
+# Admin
+# ==========================================================
+
 @app.get("/admin")
 def admin_dashboard(
     user: User = Depends(require_admin)
@@ -270,7 +278,294 @@ def admin_dashboard(
     }
 
 
+# ==========================================================
+# Phase 10: Blog Post CRUD
+# ==========================================================
+
+
+# -----------------------------
+# Create Post - GET
+# -----------------------------
+
+@app.get("/posts/create", response_class=HTMLResponse)
+def create_post_page(
+    request: Request,
+    user: User = Depends(require_current_user)
+):
+    return templates.TemplateResponse(
+        request=request,
+        name="create_post.html",
+        context={
+            "message": None
+        }
+    )
+
+
+# -----------------------------
+# Create Post - POST
+# -----------------------------
+
+@app.post("/posts/create", response_class=HTMLResponse)
+def create_post(
+    request: Request,
+    title: str = Form(),
+    content: str = Form(),
+    status: str = Form(),
+    user: User = Depends(require_current_user),
+    db: Session = Depends(get_db)
+):
+    try:
+        post_data = PostCreate(
+            title=title,
+            content=content,
+            status=status
+        )
+
+    except ValidationError:
+        return templates.TemplateResponse(
+            request=request,
+            name="create_post.html",
+            context={
+                "message": "Please enter valid post details."
+            }
+        )
+
+    new_post = Post(
+        title=post_data.title,
+        content=post_data.content,
+        status=post_data.status,
+        user_id=user.id
+    )
+
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+
+    return RedirectResponse(
+        url=f"/posts/{new_post.id}",
+        status_code=303
+    )
+
+
+# -----------------------------
+# List Posts
+# -----------------------------
+
+@app.get("/posts", response_class=HTMLResponse)
+def post_list(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    posts = db.query(Post).order_by(
+        Post.created_at.desc()
+    ).all()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="posts.html",
+        context={
+            "posts": posts
+        }
+    )
+
+
+# -----------------------------
+# Edit Post - GET
+# -----------------------------
+
+@app.get("/posts/{post_id}/edit", response_class=HTMLResponse)
+def edit_post_page(
+    request: Request,
+    post_id: int,
+    user: User = Depends(require_current_user),
+    db: Session = Depends(get_db)
+):
+    post = db.query(Post).filter(
+        Post.id == post_id
+    ).first()
+
+    if not post:
+        return templates.TemplateResponse(
+            request=request,
+            name="post_detail.html",
+            context={
+                "post": None,
+                "message": "Post not found.",
+                "current_user": user
+            },
+            status_code=404
+        )
+
+    if post.user_id != user.id:
+        return templates.TemplateResponse(
+            request=request,
+            name="post_detail.html",
+            context={
+                "post": post,
+                "message": "You are not allowed to edit this post.",
+                "current_user": user
+            },
+            status_code=403
+        )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="edit_post.html",
+        context={
+            "post": post,
+            "message": None
+        }
+    )
+
+
+# -----------------------------
+# Edit Post - POST
+# -----------------------------
+
+@app.post("/posts/{post_id}/edit", response_class=HTMLResponse)
+def edit_post(
+    request: Request,
+    post_id: int,
+    title: str = Form(),
+    content: str = Form(),
+    status: str = Form(),
+    user: User = Depends(require_current_user),
+    db: Session = Depends(get_db)
+):
+    post = db.query(Post).filter(
+        Post.id == post_id
+    ).first()
+
+    if not post:
+        return templates.TemplateResponse(
+            request=request,
+            name="post_detail.html",
+            context={
+                "post": None,
+                "message": "Post not found.",
+                "current_user": user
+            },
+            status_code=404
+        )
+
+    if post.user_id != user.id:
+        return templates.TemplateResponse(
+            request=request,
+            name="post_detail.html",
+            context={
+                "post": post,
+                "message": "You are not allowed to edit this post.",
+                "current_user": user
+            },
+            status_code=403
+        )
+
+    try:
+        post_data = PostUpdate(
+            title=title,
+            content=content,
+            status=status
+        )
+
+    except ValidationError:
+        return templates.TemplateResponse(
+            request=request,
+            name="edit_post.html",
+            context={
+                "post": post,
+                "message": "Please enter valid post details."
+            }
+        )
+
+    post.title = post_data.title
+    post.content = post_data.content
+    post.status = post_data.status
+
+    db.commit()
+    db.refresh(post)
+
+    return RedirectResponse(
+        url=f"/posts/{post.id}",
+        status_code=303
+    )
+
+
+# -----------------------------
+# Post Detail
+# -----------------------------
+
+@app.get("/posts/{post_id}", response_class=HTMLResponse)
+def post_detail(
+    request: Request,
+    post_id: int,
+    user: User = Depends(require_current_user),
+    db: Session = Depends(get_db)
+):
+    post = db.query(Post).filter(
+        Post.id == post_id
+    ).first()
+
+    if not post:
+        return templates.TemplateResponse(
+            request=request,
+            name="post_detail.html",
+            context={
+                "post": None,
+                "message": "Post not found.",
+                "current_user": user
+            },
+            status_code=404
+        )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="post_detail.html",
+        context={
+            "post": post,
+            "current_user": user
+        }
+    )
+
+
+# -----------------------------
+# Delete Post
+# -----------------------------
+
+@app.post("/posts/{post_id}/delete")
+def delete_post(
+    post_id: int,
+    user: User = Depends(require_current_user),
+    db: Session = Depends(get_db)
+):
+    post = db.query(Post).filter(
+        Post.id == post_id
+    ).first()
+
+    if not post:
+        return RedirectResponse(
+            url="/posts",
+            status_code=303
+        )
+
+    if post.user_id != user.id:
+        return RedirectResponse(
+            url=f"/posts/{post.id}",
+            status_code=303
+        )
+
+    db.delete(post)
+    db.commit()
+
+    return RedirectResponse(
+        url="/posts",
+        status_code=303
+    )
+
+
+# ==========================================================
 # Logout
+# ==========================================================
+
 @app.get("/logout")
 def logout(
     request: Request,
