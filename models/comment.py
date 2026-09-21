@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -25,6 +25,19 @@ class Comment(Base):
         nullable=False
     )
 
-    user = relationship("User")
+    is_deleted = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="0"
+    )
 
-    post = relationship("Post")
+    user = relationship(
+        "User",
+        back_populates="comments"
+    )
+
+    post = relationship(
+        "Post",
+        back_populates="comments"
+    )

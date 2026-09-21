@@ -14,6 +14,7 @@ from schemas.user import UserCreate
 from schemas.post import PostCreate, PostUpdate
 from models.user import User
 from models.post import Post
+from models.comment import Comment
 from models.user_session import UserSession
 from security import hash_password, verify_password, generate_session_id
 from utils import generate_unique_slug
@@ -645,18 +646,607 @@ def post_detail(
             context={
                 "post": None,
                 "message": "Post not found.",
-                "current_user": user
+                "current_user": user,
+                "comments": []
             },
             status_code=404
         )
+
+    # ======================================================
+    # PHASE 12: FETCH COMMENTS
+    # ======================================================
+
+    comment_query = db.query(Comment).options(
+        joinedload(Comment.user)
+    ).filter(
+        Comment.post_id == post.id
+    )
+
+    # Normal users see only active comments.
+    # Admins can also see soft-deleted comments for moderation.
+    if user.role != "admin":
+        comment_query = comment_query.filter(
+            Comment.is_deleted == False
+        )
+
+    comments = comment_query.order_by(
+        Comment.id.desc()
+    ).all()
 
     return templates.TemplateResponse(
         request=request,
         name="post_detail.html",
         context={
             "post": post,
+            "comments": comments,
             "current_user": user
         }
+    )
+
+
+# ==========================================================
+# Phase 12: Create Comment
+# ==========================================================
+
+@app.post(
+    "/posts/{slug}/comments",
+    response_class=HTMLResponse
+)
+def create_comment(
+    request: Request,
+    slug: str,
+    content: str = Form(),
+    user: User = Depends(require_current_user),
+    db: Session = Depends(get_db)
+):
+    # ------------------------------------------------------
+    # Find the post using its slug
+    # ------------------------------------------------------
+
+    post = db.query(Post).filter(
+        Post.slug == slug
+    ).first()
+
+    if not post:
+        return templates.TemplateResponse(
+            request=request,
+            name="post_detail.html",
+            context={
+                "post": None,
+                "comments": [],
+                "message": "Post not found.",
+                "current_user": user
+            },
+            status_code=404
+        )
+
+    # ------------------------------------------------------
+    # Basic comment validation
+    # ------------------------------------------------------
+
+    content = content.strip()
+
+    if not content:
+        comments = db.query(Comment).options(
+            joinedload(Comment.user)
+        ).filter(
+            Comment.post_id == post.id,
+            Comment.is_deleted == False
+        ).order_by(
+            Comment.id.desc()
+        ).all()
+
+        return templates.TemplateResponse(
+            request=request,
+            name="post_detail.html",
+            context={
+                "post": post,
+                "comments": comments,
+                "message": "Comment cannot be empty.",
+                "current_user": user
+            },
+            status_code=400
+        )
+
+    # ------------------------------------------------------
+    # Create the comment
+    # ------------------------------------------------------
+    #
+    # user.id = logged-in user who wrote the comment
+    #
+    # post.id = post on which the comment was written
+    #
+    # We NEVER take user_id from the form.
+    #
+
+    new_comment = Comment(
+        content=content,
+        user_id=user.id,
+        post_id=post.id,
+        is_deleted=False
+    )
+
+    db.add(new_comment)
+    db.commit()
+    db.refresh(new_comment)
+
+    # ------------------------------------------------------
+    # Redirect back to the post
+    # ------------------------------------------------------
+
+    return RedirectResponse(
+        url=f"/posts/{post.slug}",
+        status_code=303
+    )
+
+
+# ==========================================================
+# Phase 12: Edit Comment - GET
+# ==========================================================
+
+@app.get(
+    "/comments/{comment_id}/edit",
+    response_class=HTMLResponse
+)
+def edit_comment_page(
+    request: Request,
+    comment_id: int,
+    user: User = Depends(require_current_user),
+    db: Session = Depends(get_db)
+):
+    # ------------------------------------------------------
+    # Find the comment
+    # ------------------------------------------------------
+
+    comment = db.query(Comment).filter(
+        Comment.id == comment_id
+    ).first()
+
+    if not comment:
+        return templates.TemplateResponse(
+            request=request,
+            name="post_detail.html",
+            context={
+                "post": None,
+                "comments": [],
+                "message": "Comment not found.",
+                "current_user": user
+            },
+            status_code=404
+        )
+
+    # ------------------------------------------------------
+    # Prevent editing a soft-deleted comment
+    # ------------------------------------------------------
+
+    if comment.is_deleted:
+        post = db.query(Post).filter(
+            Post.id == comment.post_id
+        ).first()
+
+        if not post:
+            return templates.TemplateResponse(
+                request=request,
+                name="post_detail.html",
+                context={
+                    "post": None,
+                    "comments": [],
+                    "message": "Post not found.",
+                    "current_user": user
+                },
+                status_code=404
+            )
+
+        return RedirectResponse(
+            url=f"/posts/{post.slug}",
+            status_code=303
+        )
+
+    # ------------------------------------------------------
+    # Check comment ownership
+    # ------------------------------------------------------
+    #
+    # Only the user who created the comment can edit it.
+    #
+
+    if comment.user_id != user.id:
+        post = db.query(Post).filter(
+            Post.id == comment.post_id
+        ).first()
+
+        if not post:
+            return templates.TemplateResponse(
+                request=request,
+                name="post_detail.html",
+                context={
+                    "post": None,
+                    "comments": [],
+                    "message": "Post not found.",
+                    "current_user": user
+                },
+                status_code=404
+            )
+
+        comments = db.query(Comment).options(
+            joinedload(Comment.user)
+        ).filter(
+            Comment.post_id == post.id,
+            Comment.is_deleted == False
+        ).order_by(
+            Comment.id.desc()
+        ).all()
+
+        return templates.TemplateResponse(
+            request=request,
+            name="post_detail.html",
+            context={
+                "post": post,
+                "comments": comments,
+                "message": "You are not allowed to edit this comment.",
+                "current_user": user
+            },
+            status_code=403
+        )
+
+    # ------------------------------------------------------
+    # Find the post to which the comment belongs
+    # ------------------------------------------------------
+
+    post = db.query(Post).options(
+        joinedload(Post.user)
+    ).filter(
+        Post.id == comment.post_id
+    ).first()
+
+    if not post:
+        return templates.TemplateResponse(
+            request=request,
+            name="post_detail.html",
+            context={
+                "post": None,
+                "comments": [],
+                "message": "Post not found.",
+                "current_user": user
+            },
+            status_code=404
+        )
+
+    comments = db.query(Comment).options(
+        joinedload(Comment.user)
+    ).filter(
+        Comment.post_id == post.id,
+        Comment.is_deleted == False
+    ).order_by(
+        Comment.id.desc()
+    ).all()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="post_detail.html",
+        context={
+            "post": post,
+            "comments": comments,
+            "edit_comment": comment,
+            "current_user": user
+        }
+    )
+
+
+# ==========================================================
+# Phase 12: Edit Comment - POST
+# ==========================================================
+
+@app.post(
+    "/comments/{comment_id}/edit",
+    response_class=HTMLResponse
+)
+def edit_comment(
+    request: Request,
+    comment_id: int,
+    content: str = Form(),
+    user: User = Depends(require_current_user),
+    db: Session = Depends(get_db)
+):
+    # ------------------------------------------------------
+    # Find the comment
+    # ------------------------------------------------------
+
+    comment = db.query(Comment).filter(
+        Comment.id == comment_id
+    ).first()
+
+    if not comment:
+        return templates.TemplateResponse(
+            request=request,
+            name="post_detail.html",
+            context={
+                "post": None,
+                "comments": [],
+                "message": "Comment not found.",
+                "current_user": user
+            },
+            status_code=404
+        )
+
+    # ------------------------------------------------------
+    # Prevent editing a soft-deleted comment
+    # ------------------------------------------------------
+
+    if comment.is_deleted:
+        post = db.query(Post).filter(
+            Post.id == comment.post_id
+        ).first()
+
+        if not post:
+            return templates.TemplateResponse(
+                request=request,
+                name="post_detail.html",
+                context={
+                    "post": None,
+                    "comments": [],
+                    "message": "Post not found.",
+                    "current_user": user
+                },
+                status_code=404
+            )
+
+        return RedirectResponse(
+            url=f"/posts/{post.slug}",
+            status_code=303
+        )
+
+    # ------------------------------------------------------
+    # Check comment ownership
+    # ------------------------------------------------------
+
+    if comment.user_id != user.id:
+        post = db.query(Post).filter(
+            Post.id == comment.post_id
+        ).first()
+
+        if not post:
+            return templates.TemplateResponse(
+                request=request,
+                name="post_detail.html",
+                context={
+                    "post": None,
+                    "comments": [],
+                    "message": "Post not found.",
+                    "current_user": user
+                },
+                status_code=404
+            )
+
+        comments = db.query(Comment).options(
+            joinedload(Comment.user)
+        ).filter(
+            Comment.post_id == post.id,
+            Comment.is_deleted == False
+        ).order_by(
+            Comment.id.desc()
+        ).all()
+
+        return templates.TemplateResponse(
+            request=request,
+            name="post_detail.html",
+            context={
+                "post": post,
+                "comments": comments,
+                "message": "You are not allowed to edit this comment.",
+                "current_user": user
+            },
+            status_code=403
+        )
+
+    # ------------------------------------------------------
+    # Validate updated content
+    # ------------------------------------------------------
+
+    content = content.strip()
+
+    if not content:
+        post = db.query(Post).options(
+            joinedload(Post.user)
+        ).filter(
+            Post.id == comment.post_id
+        ).first()
+
+        comments = db.query(Comment).options(
+            joinedload(Comment.user)
+        ).filter(
+            Comment.post_id == comment.post_id,
+            Comment.is_deleted == False
+        ).order_by(
+            Comment.id.desc()
+        ).all()
+
+        return templates.TemplateResponse(
+            request=request,
+            name="post_detail.html",
+            context={
+                "post": post,
+                "comments": comments,
+                "edit_comment": comment,
+                "message": "Comment cannot be empty.",
+                "current_user": user
+            },
+            status_code=400
+        )
+
+    # ------------------------------------------------------
+    # Update the comment
+    # ------------------------------------------------------
+
+    comment.content = content
+
+    db.commit()
+    db.refresh(comment)
+
+    # ------------------------------------------------------
+    # Find the post and redirect back to it
+    # ------------------------------------------------------
+
+    post = db.query(Post).filter(
+        Post.id == comment.post_id
+    ).first()
+
+    return RedirectResponse(
+        url=f"/posts/{post.slug}",
+        status_code=303
+    )
+
+
+# ==========================================================
+# Phase 12: Delete Comment
+# ==========================================================
+
+@app.post("/comments/{comment_id}/delete")
+def delete_comment(
+    comment_id: int,
+    user: User = Depends(require_current_user),
+    db: Session = Depends(get_db)
+):
+    # ------------------------------------------------------
+    # Find the comment
+    # ------------------------------------------------------
+
+    comment = db.query(Comment).filter(
+        Comment.id == comment_id
+    ).first()
+
+    if not comment:
+        return RedirectResponse(
+            url="/posts",
+            status_code=303
+        )
+
+    # ------------------------------------------------------
+    # Ignore comments that are already soft-deleted
+    # ------------------------------------------------------
+
+    if comment.is_deleted:
+        post = db.query(Post).filter(
+            Post.id == comment.post_id
+        ).first()
+
+        if post:
+            return RedirectResponse(
+                url=f"/posts/{post.slug}",
+                status_code=303
+            )
+
+        return RedirectResponse(
+            url="/posts",
+            status_code=303
+        )
+
+    # ------------------------------------------------------
+    # Check comment ownership
+    # ------------------------------------------------------
+    #
+    # Only the comment author can delete the comment.
+    #
+
+    if comment.user_id != user.id:
+        post = db.query(Post).filter(
+            Post.id == comment.post_id
+        ).first()
+
+        if post:
+            return RedirectResponse(
+                url=f"/posts/{post.slug}",
+                status_code=303
+            )
+
+        return RedirectResponse(
+            url="/posts",
+            status_code=303
+        )
+
+    # ------------------------------------------------------
+    # Save the post ID before deleting the comment
+    # ------------------------------------------------------
+
+    post_id = comment.post_id
+
+    comment.is_deleted = True
+    db.commit()
+
+    # ------------------------------------------------------
+    # Redirect back to the post
+    # ------------------------------------------------------
+
+    post = db.query(Post).filter(
+        Post.id == post_id
+    ).first()
+
+    if post:
+        return RedirectResponse(
+            url=f"/posts/{post.slug}",
+            status_code=303
+        )
+
+    return RedirectResponse(
+        url="/posts",
+        status_code=303
+    )
+
+
+# ==========================================================
+# Phase 12: Admin Comment Moderation
+# ==========================================================
+
+@app.post("/admin/comments/{comment_id}/delete")
+def admin_delete_comment(
+    comment_id: int,
+    user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    # ------------------------------------------------------
+    # Find the comment
+    # ------------------------------------------------------
+
+    comment = db.query(Comment).filter(
+        Comment.id == comment_id
+    ).first()
+
+    if not comment:
+        return RedirectResponse(
+            url="/posts",
+            status_code=303
+        )
+
+    # ------------------------------------------------------
+    # Soft delete the comment
+    # ------------------------------------------------------
+    #
+    # require_admin already checked that the logged-in
+    # user is an admin.
+    #
+
+    post_id = comment.post_id
+
+    if not comment.is_deleted:
+        comment.is_deleted = True
+        db.commit()
+
+    # ------------------------------------------------------
+    # Redirect back to the post
+    # ------------------------------------------------------
+
+    post = db.query(Post).filter(
+        Post.id == post_id
+    ).first()
+
+    if post:
+        return RedirectResponse(
+            url=f"/posts/{post.slug}",
+            status_code=303
+        )
+
+    return RedirectResponse(
+        url="/posts",
+        status_code=303
     )
 
 

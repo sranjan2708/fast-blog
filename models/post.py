@@ -2,6 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
+
 from database import Base
 from models.post_category import PostCategory
 
@@ -9,7 +10,11 @@ from models.post_category import PostCategory
 class Post(Base):
     __tablename__ = "posts"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
 
     slug = Column(
         String(250),
@@ -18,9 +23,15 @@ class Post(Base):
         index=True
     )
 
-    title = Column(String(200), nullable=False)
+    title = Column(
+        String(200),
+        nullable=False
+    )
 
-    content = Column(String(5000), nullable=False)
+    content = Column(
+        String(5000),
+        nullable=False
+    )
 
     status = Column(
         String(20),
@@ -51,6 +62,11 @@ class Post(Base):
     user = relationship(
         "User",
         back_populates="posts"
+    )
+
+    comments = relationship(
+        "Comment",
+        back_populates="post"
     )
 
     categories = relationship(
