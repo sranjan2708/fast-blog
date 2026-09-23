@@ -11,6 +11,7 @@
 <form method="POST" action="/posts/{{ post.id }}/edit">
 
     <div>
+
         <label for="title">Title</label>
 
         <input
@@ -21,11 +22,13 @@
             maxlength="200"
             required
         >
+
     </div>
 
     <br>
 
     <div>
+
         <label for="content">Content</label>
 
         <textarea
@@ -34,11 +37,13 @@
             maxlength="5000"
             required
         >{{ post.content }}</textarea>
+
     </div>
 
     <br>
 
     <div>
+
         <label for="status">Status</label>
 
         <select id="status" name="status">
@@ -58,6 +63,61 @@
             </option>
 
         </select>
+
+    </div>
+
+    <br>
+
+    <div>
+
+        <label for="categories">Categories</label>
+
+        <select
+            id="categories"
+            name="category_ids"
+            multiple
+        >
+
+            {% for category in categories %}
+
+                <option
+                    value="{{ category.id }}"
+                    {% if category in post.categories %}selected{% endif %}
+                >
+                    {{ category.name }}
+                </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+    <br>
+
+    <div>
+
+        <label for="tags">Tags</label>
+
+        <select
+            id="tags"
+            name="tag_ids"
+            multiple
+        >
+
+            {% for tag in tags %}
+
+                <option
+                    value="{{ tag.id }}"
+                    {% if tag in post.tags %}selected{% endif %}
+                >
+                    {{ tag.name }}
+                </option>
+
+            {% endfor %}
+
+        </select>
+
     </div>
 
     <br>
@@ -70,7 +130,7 @@
 
 <br>
 
-<a href="/posts/{{ post.id }}">
+<a href="/posts/{{ post.slug }}">
     Cancel
 </a>
 

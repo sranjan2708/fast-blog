@@ -46,6 +46,42 @@
 
     <br>
 
+    <div>
+        <label for="categories">Categories</label>
+
+        <select
+            id="categories"
+            name="category_ids"
+            multiple
+        >
+            {% for category in categories %}
+                <option value="{{ category.id }}">
+                    {{ category.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <br>
+
+    <div>
+        <label for="tags">Tags</label>
+
+        <select
+            id="tags"
+            name="tag_ids"
+            multiple
+        >
+            {% for tag in tags %}
+                <option value="{{ tag.id }}">
+                    {{ tag.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <br>
+
     <button type="submit">
         Create Post
     </button>

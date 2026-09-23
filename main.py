@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from fastapi import FastAPI, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
 from pydantic import ValidationError
@@ -18,6 +18,8 @@ from models.comment import Comment
 from models.like import Like
 from models.post_view import PostView
 from models.user_session import UserSession
+from models.category import Category
+from models.tag import Tag
 from security import hash_password, verify_password, generate_session_id
 from utils import generate_unique_slug
 
@@ -25,6 +27,12 @@ from utils import generate_unique_slug
 app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
+
+
+def get_post_form_options(db: Session):
+    categories = db.query(Category).order_by(Category.name.asc()).all()
+    tags = db.query(Tag).order_by(Tag.name.asc()).all()
+    return categories, tags
 
 
 # ==========================================================
@@ -295,13 +303,24 @@ def admin_dashboard(
 @app.get("/posts/create", response_class=HTMLResponse)
 def create_post_page(
     request: Request,
-    user: User = Depends(require_current_user)
+    user: User = Depends(require_current_user),
+    db: Session = Depends(get_db)
 ):
+    categories = db.query(Category).order_by(
+        Category.name.asc()
+    ).all()
+
+    tags = db.query(Tag).order_by(
+        Tag.name.asc()
+    ).all()
+
     return templates.TemplateResponse(
         request=request,
         name="create_post.html",
         context={
-            "message": None
+            "message": None,
+            "categories": categories,
+            "tags": tags
         }
     )
 
@@ -316,6 +335,8 @@ def create_post(
     title: str = Form(),
     content: str = Form(),
     status: str = Form(),
+    category_ids: list[int] = Form(default=[]),
+    tag_ids: list[int] = Form(default=[]),
     user: User = Depends(require_current_user),
     db: Session = Depends(get_db)
 ):
@@ -323,17 +344,66 @@ def create_post(
         post_data = PostCreate(
             title=title,
             content=content,
-            status=status
+            status=status,
+            category_ids=category_ids,
+            tag_ids=tag_ids
         )
 
     except ValidationError:
+        categories, tags = get_post_form_options(db)
         return templates.TemplateResponse(
             request=request,
             name="create_post.html",
             context={
-                "message": "Please enter valid post details."
+                "message": "Please enter valid post details.",
+                "categories": categories,
+                "tags": tags
             }
         )
+
+    categories = []
+
+    for category_id in post_data.category_ids:
+
+        category = db.query(Category).filter(
+            Category.id == category_id
+        ).first()
+
+        if not category:
+            categories, tags = get_post_form_options(db)
+            return templates.TemplateResponse(
+                request=request,
+                name="create_post.html",
+                context={
+                    "message": f"Category with ID {category_id} not found.",
+                    "categories": categories,
+                    "tags": tags
+                }
+            )
+
+        categories.append(category)
+
+    tags = []
+
+    for tag_id in post_data.tag_ids:
+
+        tag = db.query(Tag).filter(
+            Tag.id == tag_id
+        ).first()
+
+        if not tag:
+            categories, tags = get_post_form_options(db)
+            return templates.TemplateResponse(
+                request=request,
+                name="create_post.html",
+                context={
+                    "message": f"Tag with ID {tag_id} not found.",
+                    "categories": categories,
+                    "tags": tags
+                }
+            )
+
+        tags.append(tag)
 
     slug = generate_unique_slug(
         post_data.title,
@@ -347,6 +417,9 @@ def create_post(
         status=post_data.status,
         user_id=user.id
     )
+
+    new_post.categories = categories
+    new_post.tags = tags
 
     db.add(new_post)
     db.commit()
@@ -369,6 +442,8 @@ def post_list(
     status: str = "",
     sort: str = "newest",
     page: int = 1,
+    category_id: int | None = None,
+    tag_id: int | None = None,
     db: Session = Depends(get_db)
 ):
 
@@ -413,12 +488,61 @@ def post_list(
         )
 
     # ------------------------------------------------------
+    # PHASE 14: Filtering by Category
+    # ------------------------------------------------------
+
+    if category_id is not None:
+        category = db.query(Category).filter(
+            Category.id == category_id
+        ).first()
+
+        if category:
+            query = query.filter(
+                Post.categories.any(
+                    Category.id == category_id
+                )
+            )
+        else:
+            # Invalid category ID should return no posts
+            query = query.filter(Post.id == -1)
+
+    # ------------------------------------------------------
+    # PHASE 14: Filtering by Tag
+    # ------------------------------------------------------
+
+    if tag_id is not None:
+        tag = db.query(Tag).filter(
+            Tag.id == tag_id
+        ).first()
+
+        if tag:
+            query = query.filter(
+                Post.tags.any(
+                    Tag.id == tag_id
+                )
+            )
+        else:
+            # Invalid tag ID should return no posts
+            query = query.filter(Post.id == -1)
+
+    # ------------------------------------------------------
+    # Load filter options
+    # ------------------------------------------------------
+
+    categories = db.query(Category).order_by(
+        Category.name.asc()
+    ).all()
+
+    tags = db.query(Tag).order_by(
+        Tag.name.asc()
+    ).all()
+
+    # ------------------------------------------------------
     # Count total matching posts
     # ------------------------------------------------------
-    #
+
     # We count before applying ORDER BY.
     # The count only needs the filtering conditions.
-    #
 
     total_posts = query.count()
 
@@ -466,19 +590,15 @@ def post_list(
     # ------------------------------------------------------
     # Fetch only the posts needed for this page
     # ------------------------------------------------------
-    #
-    # joinedload(Post.user) eagerly loads the related user
-    # in the same database operation.
-    #
-    # This avoids unnecessary additional queries when the
-    # template accesses:
-    #
-    #     post.user.username
-    #
-    # ------------------------------------------------------
+
+    # joinedload(Post.user) eagerly loads the related user.
+    # selectinload is used for the many-to-many category/tag
+    # relationships so the template can display them efficiently.
 
     posts = query.options(
-        joinedload(Post.user)
+        joinedload(Post.user),
+        selectinload(Post.categories),
+        selectinload(Post.tags)
     ).offset(
         offset
     ).limit(
@@ -495,7 +615,11 @@ def post_list(
             "sort": sort,
             "page": page,
             "total_pages": total_pages,
-            "total_posts": total_posts
+            "total_posts": total_posts,
+            "categories": categories,
+            "tags": tags,
+            "category_id": category_id,
+            "tag_id": tag_id
         }
     )
 
@@ -539,12 +663,16 @@ def edit_post_page(
             status_code=403
         )
 
+    categories, tags = get_post_form_options(db)
+
     return templates.TemplateResponse(
         request=request,
         name="edit_post.html",
         context={
             "post": post,
-            "message": None
+            "message": None,
+            "categories": categories,
+            "tags": tags
         }
     )
 
@@ -560,6 +688,8 @@ def edit_post(
     title: str = Form(),
     content: str = Form(),
     status: str = Form(),
+    category_ids: list[int] = Form(default=[]),
+    tag_ids: list[int] = Form(default=[]),
     user: User = Depends(require_current_user),
     db: Session = Depends(get_db)
 ):
@@ -595,22 +725,97 @@ def edit_post(
         post_data = PostUpdate(
             title=title,
             content=content,
-            status=status
+            status=status,
+            category_ids=category_ids,
+            tag_ids=tag_ids
         )
 
     except ValidationError:
+        categories = db.query(Category).order_by(
+            Category.name.asc()
+        ).all()
+
+        tags = db.query(Tag).order_by(
+            Tag.name.asc()
+        ).all()
+
         return templates.TemplateResponse(
             request=request,
             name="edit_post.html",
             context={
                 "post": post,
-                "message": "Please enter valid post details."
+                "message": "Please enter valid post details.",
+                "categories": categories,
+                "tags": tags
             }
         )
+
+    categories = []
+
+    for category_id in post_data.category_ids:
+
+        category = db.query(Category).filter(
+            Category.id == category_id
+        ).first()
+
+        if not category:
+            categories = db.query(Category).order_by(
+                Category.name.asc()
+            ).all()
+
+            tags = db.query(Tag).order_by(
+                Tag.name.asc()
+            ).all()
+
+            return templates.TemplateResponse(
+                request=request,
+                name="edit_post.html",
+                context={
+                    "post": post,
+                    "message": f"Category with ID {category_id} not found.",
+                    "categories": categories,
+                    "tags": tags
+                }
+            )
+
+        categories.append(category)
+
+    tags = []
+
+    for tag_id in post_data.tag_ids:
+
+        tag = db.query(Tag).filter(
+            Tag.id == tag_id
+        ).first()
+
+        if not tag:
+            categories = db.query(Category).order_by(
+                Category.name.asc()
+            ).all()
+
+            tags = db.query(Tag).order_by(
+                Tag.name.asc()
+            ).all()
+
+            return templates.TemplateResponse(
+                request=request,
+                name="edit_post.html",
+                context={
+                    "post": post,
+                    "message": f"Tag with ID {tag_id} not found.",
+                    "categories": categories,
+                    "tags": tags
+                }
+            )
+
+        tags.append(tag)
 
     post.title = post_data.title
     post.content = post_data.content
     post.status = post_data.status
+
+    post.categories = categories
+    post.tags = tags
 
     # Keep the existing slug unchanged
     db.commit()

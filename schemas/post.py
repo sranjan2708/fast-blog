@@ -17,6 +17,14 @@ class PostCreate(BaseModel):
         default="draft"
     )
 
+    category_ids: list[int] = Field(
+        default_factory=list
+    )
+
+    tag_ids: list[int] = Field(
+        default_factory=list
+    )
+
 
 class PostUpdate(BaseModel):
 
@@ -32,4 +40,12 @@ class PostUpdate(BaseModel):
 
     status: str = Field(
         default="draft"
+    )
+
+    category_ids: list[int] = Field(
+        default_factory=list
+    )
+
+    tag_ids: list[int] = Field(
+        default_factory=list
     )

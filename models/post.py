@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 
 from database import Base
 from models.post_category import PostCategory
+from models.post_tag import PostTag
 
 
 class Post(Base):
@@ -37,13 +38,15 @@ class Post(Base):
         String(20),
         nullable=False,
         default="draft",
-        server_default="draft"
+        server_default="draft",
+        index=True
     )
 
     user_id = Column(
         Integer,
         ForeignKey("users.id"),
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     views = Column(
@@ -56,7 +59,8 @@ class Post(Base):
     created_at = Column(
         DateTime,
         default=datetime.utcnow,
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     updated_at = Column(
@@ -79,5 +83,11 @@ class Post(Base):
     categories = relationship(
         "Category",
         secondary=PostCategory.__table__,
+        back_populates="posts"
+    )
+
+    tags = relationship(
+        "Tag",
+        secondary=PostTag.__table__,
         back_populates="posts"
     )

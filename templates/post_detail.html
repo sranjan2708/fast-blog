@@ -32,11 +32,59 @@
 
 {% endif %}
 
+<!-- ==================================================
+     PHASE 14: CATEGORIES & TAGS
+     ================================================== -->
+
+{% if post.categories %}
+
+    <p>
+        <strong>Categories:</strong>
+
+        {% for category in post.categories %}
+
+            <span>
+                {{ category.name }}
+            </span>
+
+            {% if not loop.last %}
+                ,
+            {% endif %}
+
+        {% endfor %}
+
+    </p>
+
+{% endif %}
+
+
+{% if post.tags %}
+
+    <p>
+        <strong>Tags:</strong>
+
+        {% for tag in post.tags %}
+
+            <span>
+                {{ tag.name }}
+            </span>
+
+            {% if not loop.last %}
+                ,
+            {% endif %}
+
+        {% endfor %}
+
+    </p>
+
+{% endif %}
+
 <hr>
 
 <p>
     {{ post.content }}
 </p>
+
 
 <!-- ==================================================
      PHASE 13: LIKES & VIEW COUNTER
@@ -87,6 +135,7 @@
 {% endif %}
 
 <hr>
+
 
 {% if current_user and current_user.id == post.user_id %}
 
