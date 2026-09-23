@@ -38,8 +38,55 @@
     {{ post.content }}
 </p>
 
+<!-- ==================================================
+     PHASE 13: LIKES & VIEW COUNTER
+     ================================================== -->
+
 <hr>
 
+<h2>
+    Engagement
+</h2>
+
+<p>
+    Views: {{ post.views }}
+</p>
+
+<p>
+    Likes: {{ like_count }}
+</p>
+
+{% if liked %}
+
+    <form
+        action="/posts/{{ post.slug }}/unlike"
+        method="post"
+        style="display:inline;"
+    >
+
+        <button type="submit">
+            Unlike
+        </button>
+
+    </form>
+
+{% else %}
+
+    <form
+        action="/posts/{{ post.slug }}/like"
+        method="post"
+        style="display:inline;"
+    >
+
+        <button type="submit">
+            Like
+        </button>
+
+    </form>
+
+{% endif %}
+
+<hr>
 
 {% if current_user and current_user.id == post.user_id %}
 

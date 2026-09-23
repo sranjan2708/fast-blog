@@ -15,6 +15,8 @@ from schemas.post import PostCreate, PostUpdate
 from models.user import User
 from models.post import Post
 from models.comment import Comment
+from models.like import Like
+from models.post_view import PostView
 from models.user_session import UserSession
 from security import hash_password, verify_password, generate_session_id
 from utils import generate_unique_slug
@@ -673,14 +675,181 @@ def post_detail(
         Comment.id.desc()
     ).all()
 
+    # ======================================================
+    # PHASE 13: POST VIEW TRACKING
+    # ======================================================
+
+    # Check whether this user has already viewed this post.
+    existing_view = db.query(PostView).filter(
+        PostView.user_id == user.id,
+        PostView.post_id == post.id
+    ).first()
+
+    # Count this user's first view only.
+    if not existing_view:
+        new_view = PostView(
+            user_id=user.id,
+            post_id=post.id
+        )
+
+        db.add(new_view)
+        post.views += 1
+
+        try:
+            db.commit()
+        except IntegrityError:
+            # Another request may have created the same view first.
+            db.rollback()
+
+    # ======================================================
+    # PHASE 13: FETCH LIKE INFORMATION
+    # ======================================================
+
+    # Check whether the current user has already liked this post.
+    existing_like = db.query(Like).filter(
+        Like.user_id == user.id,
+        Like.post_id == post.id
+    ).first()
+
+    liked = existing_like is not None
+
+    # Count all likes belonging to this post.
+    like_count = db.query(Like).filter(
+        Like.post_id == post.id
+    ).count()
+
     return templates.TemplateResponse(
         request=request,
         name="post_detail.html",
         context={
             "post": post,
             "comments": comments,
-            "current_user": user
+            "current_user": user,
+            "liked": liked,
+            "like_count": like_count
         }
+    )
+
+
+# ==========================================================
+# Phase 13: Like Post
+# ==========================================================
+
+@app.post("/posts/{slug}/like")
+def like_post(
+    slug: str,
+    user: User = Depends(require_current_user),
+    db: Session = Depends(get_db)
+):
+    # ------------------------------------------------------
+    # Find the post using its slug
+    # ------------------------------------------------------
+
+    post = db.query(Post).filter(
+        Post.slug == slug
+    ).first()
+
+    if not post:
+        return RedirectResponse(
+            url="/posts",
+            status_code=303
+        )
+
+    # ------------------------------------------------------
+    # Check whether the current user already liked the post
+    # ------------------------------------------------------
+
+    existing_like = db.query(Like).filter(
+        Like.user_id == user.id,
+        Like.post_id == post.id
+    ).first()
+
+    # ------------------------------------------------------
+    # Prevent duplicate likes
+    # ------------------------------------------------------
+
+    if existing_like:
+        return RedirectResponse(
+            url=f"/posts/{post.slug}",
+            status_code=303
+        )
+
+    # ------------------------------------------------------
+    # Create the Like
+    # ------------------------------------------------------
+
+    new_like = Like(
+        user_id=user.id,
+        post_id=post.id
+    )
+
+    db.add(new_like)
+
+    try:
+        db.commit()
+    except IntegrityError:
+        # The database UNIQUE constraint on (user_id, post_id)
+        # is the final protection against duplicate likes.
+        db.rollback()
+
+    # ------------------------------------------------------
+    # Redirect back to the post
+    # ------------------------------------------------------
+
+    return RedirectResponse(
+        url=f"/posts/{post.slug}",
+        status_code=303
+    )
+
+
+# ==========================================================
+# Phase 13: Unlike Post
+# ==========================================================
+
+@app.post("/posts/{slug}/unlike")
+def unlike_post(
+    slug: str,
+    user: User = Depends(require_current_user),
+    db: Session = Depends(get_db)
+):
+    # ------------------------------------------------------
+    # Find the post using its slug
+    # ------------------------------------------------------
+
+    post = db.query(Post).filter(
+        Post.slug == slug
+    ).first()
+
+    if not post:
+        return RedirectResponse(
+            url="/posts",
+            status_code=303
+        )
+
+    # ------------------------------------------------------
+    # Find the existing Like record
+    # ------------------------------------------------------
+
+    existing_like = db.query(Like).filter(
+        Like.user_id == user.id,
+        Like.post_id == post.id
+    ).first()
+
+    # ------------------------------------------------------
+    # Remove the Like if it exists
+    # ------------------------------------------------------
+
+    if existing_like:
+        db.delete(existing_like)
+        db.commit()
+
+    # ------------------------------------------------------
+    # Redirect back to the post
+    # ------------------------------------------------------
+
+    return RedirectResponse(
+        url=f"/posts/{post.slug}",
+        status_code=303
     )
 
 

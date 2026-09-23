@@ -6,7 +6,7 @@ from sqlalchemy import pool
 from alembic import context
 
 from database import Base, DATABASE_URL
-from models import User, Post, Comment, Like, Category, PostCategory, UserSession
+from models import User, Post, Comment, Like, Category, PostCategory, UserSession, PostView
 
 
 # this is the Alembic Config object, which provides

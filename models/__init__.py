@@ -6,3 +6,4 @@ from .category import Category
 from .post_category import PostCategory
 from .tag import Tag
 from .user_session import UserSession
+from .post_view import PostView
