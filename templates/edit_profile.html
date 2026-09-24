@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Edit Profile</title>
+</head>
+
+<body>
+
+    <h1>Edit Profile</h1>
+
+    {% if message %}
+        <p>{{ message }}</p>
+    {% endif %}
+
+    <form method="post" action="/profile/edit">
+
+        <div>
+            <label for="username">
+                Username
+            </label>
+
+            <input
+                type="text"
+                id="username"
+                name="username"
+                value="{{ user.username }}"
+                required
+                minlength="3"
+                maxlength="50"
+            >
+        </div>
+
+        <br>
+
+        <div>
+            <label for="bio">
+                Bio
+            </label>
+
+            <br>
+
+            <textarea
+                id="bio"
+                name="bio"
+                rows="5"
+                maxlength="500"
+            >{{ user.bio or "" }}</textarea>
+        </div>
+
+        <br>
+
+        <div>
+            <label for="theme">
+                Theme
+            </label>
+
+            <select
+                id="theme"
+                name="theme"
+                required
+            >
+                <option
+                    value="light"
+                    {% if user.theme == "light" %}selected{% endif %}
+                >
+                    Light
+                </option>
+
+                <option
+                    value="dark"
+                    {% if user.theme == "dark" %}selected{% endif %}
+                >
+                    Dark
+                </option>
+            </select>
+        </div>
+
+        <br>
+
+        <div>
+            <label for="posts_per_page">
+                Posts per page
+            </label>
+
+            <input
+                type="number"
+                id="posts_per_page"
+                name="posts_per_page"
+                value="{{ user.posts_per_page }}"
+                min="5"
+                max="50"
+                required
+            >
+        </div>
+
+        <br>
+
+        <button type="submit">
+            Update Profile
+        </button>
+
+    </form>
+
+    <br>
+
+    <a href="/profile">
+        Cancel
+    </a>
+
+</body>
+
+</html>

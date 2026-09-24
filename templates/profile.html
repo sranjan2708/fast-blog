@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>My Profile</title>
+
+    <style>
+
+        /* ==============================
+           Theme Variables
+        ============================== */
+
+        :root {
+            --background: #f4f6f8;
+            --card-background: #ffffff;
+            --text: #222222;
+            --secondary-text: #666666;
+            --border: #dddddd;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --status-background: #eef2ff;
+        }
+
+        body.dark-theme {
+            --background: #111827;
+            --card-background: #1f2937;
+            --text: #f9fafb;
+            --secondary-text: #d1d5db;
+            --border: #374151;
+            --primary: #60a5fa;
+            --primary-hover: #93c5fd;
+            --status-background: #374151;
+        }
+
+        /* ==============================
+           General Page Styling
+        ============================== */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px 20px;
+
+            background-color: var(--background);
+            color: var(--text);
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            transition:
+                background-color 0.2s ease,
+                color 0.2s ease;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* ==============================
+           Header
+        ============================== */
+
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            margin-bottom: 25px;
+        }
+
+        .profile-header h1 {
+            margin: 0;
+        }
+
+        /* ==============================
+           Cards
+        ============================== */
+
+        .card {
+            background-color: var(--card-background);
+
+            border: 1px solid var(--border);
+
+            border-radius: 10px;
+
+            padding: 24px;
+
+            margin-bottom: 25px;
+
+            box-shadow:
+                0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        /* ==============================
+           Profile Information
+        ============================== */
+
+        .profile-item {
+            margin-bottom: 14px;
+        }
+
+        .profile-item strong {
+            display: inline-block;
+            min-width: 130px;
+        }
+
+        .bio {
+            color: var(--secondary-text);
+            line-height: 1.6;
+        }
+
+        /* ==============================
+           Preferences
+        ============================== */
+
+        .preference {
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            padding: 12px 0;
+
+            border-bottom: 1px solid var(--border);
+        }
+
+        .preference:last-child {
+            border-bottom: none;
+        }
+
+        .preference-value {
+            background-color: var(--status-background);
+
+            padding: 6px 12px;
+
+            border-radius: 6px;
+
+            font-weight: bold;
+        }
+
+        /* ==============================
+           Posts
+        ============================== */
+
+        .post {
+            padding: 18px 0;
+
+            border-bottom: 1px solid var(--border);
+        }
+
+        .post:last-child {
+            border-bottom: none;
+        }
+
+        .post h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .post h3 a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .post h3 a:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+
+        .post-meta {
+            color: var(--secondary-text);
+            font-size: 14px;
+        }
+
+        .status {
+            display: inline-block;
+
+            background-color: var(--status-background);
+
+            padding: 5px 10px;
+
+            border-radius: 5px;
+
+            font-size: 13px;
+
+            font-weight: bold;
+        }
+
+        /* ==============================
+           Comments
+        ============================== */
+
+        .comment {
+            padding: 18px 0;
+
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comment:last-child {
+            border-bottom: none;
+        }
+
+        .comment-content {
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .comment-post {
+            margin-top: 10px;
+            margin-bottom: 8px;
+
+            color: var(--secondary-text);
+
+            font-size: 14px;
+        }
+
+        .comment-post a {
+            color: var(--primary);
+
+            font-weight: bold;
+
+            text-decoration: none;
+        }
+
+        .comment-post a:hover {
+            color: var(--primary-hover);
+
+            text-decoration: underline;
+        }
+
+        .comment-id {
+            color: var(--secondary-text);
+            font-size: 13px;
+        }
+
+        /* ==============================
+           Buttons
+        ============================== */
+
+        .button {
+            display: inline-block;
+
+            background-color: var(--primary);
+
+            color: white;
+
+            text-decoration: none;
+
+            border: none;
+
+            padding: 10px 16px;
+
+            border-radius: 6px;
+
+            cursor: pointer;
+
+            font-size: 14px;
+        }
+
+        .button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* ==============================
+           Empty State
+        ============================== */
+
+        .empty-state {
+            color: var(--secondary-text);
+
+            text-align: center;
+
+            padding: 20px 0;
+        }
+
+        /* ==============================
+           Responsive Design
+        ============================== */
+
+        @media (max-width: 600px) {
+
+            body {
+                padding: 20px 12px;
+            }
+
+            .profile-header {
+                flex-direction: column;
+
+                align-items: flex-start;
+
+                gap: 15px;
+            }
+
+            .card {
+                padding: 18px;
+            }
+
+            .profile-item strong {
+                display: block;
+
+                margin-bottom: 4px;
+            }
+
+            .preference {
+                flex-direction: column;
+
+                align-items: flex-start;
+
+                gap: 8px;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body class="{{ user.theme }}-theme">
+
+<div class="container">
+
+
+    <!-- ==============================
+         Profile Header
+    ============================== -->
+
+    <div class="profile-header">
+
+        <h1>My Profile</h1>
+
+        <a
+            href="/profile/edit"
+            class="button"
+        >
+            Edit Profile
+        </a>
+
+    </div>
+
+
+    <!-- ==============================
+         Profile Information
+    ============================== -->
+
+    <div class="card">
+
+        <h2>Profile Information</h2>
+
+        <div class="profile-item">
+
+            <strong>Username:</strong>
+
+            {{ user.username }}
+
+        </div>
+
+
+        <div class="profile-item">
+
+            <strong>Email:</strong>
+
+            {{ user.email }}
+
+        </div>
+
+
+        <div class="profile-item">
+
+            <strong>Role:</strong>
+
+            {{ user.role }}
+
+        </div>
+
+
+        <div class="profile-item">
+
+            <strong>Bio:</strong>
+
+            <div class="bio">
+
+                {{ user.bio or "No bio added yet." }}
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==============================
+         User Preferences
+    ============================== -->
+
+    <div class="card">
+
+        <h2>My Preferences</h2>
+
+        <div class="preference">
+
+            <span>
+                <strong>Theme</strong>
+            </span>
+
+            <span class="preference-value">
+
+                {{ user.theme | capitalize }}
+
+            </span>
+
+        </div>
+
+
+        <div class="preference">
+
+            <span>
+                <strong>Posts per page</strong>
+            </span>
+
+            <span class="preference-value">
+
+                {{ user.posts_per_page }}
+
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==============================
+         User Posts
+    ============================== -->
+
+    <div class="card">
+
+        <h2>My Posts</h2>
+
+        {% if posts %}
+
+            {% for post in posts %}
+
+                <div class="post">
+
+                    <h3>
+
+                        <a href="/posts/{{ post.slug }}">
+
+                            {{ post.title }}
+
+                        </a>
+
+                    </h3>
+
+
+                    <p>
+
+                        <span class="status">
+
+                            Status:
+                            {{ post.status | capitalize }}
+
+                        </span>
+
+                    </p>
+
+
+                    <p class="post-meta">
+
+                        Created:
+                        {{ post.created_at }}
+
+                    </p>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="empty-state">
+
+                You haven't created any posts yet.
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- ==============================
+         User Comments
+    ============================== -->
+
+    <div class="card">
+
+        <h2>My Comments</h2>
+
+        {% if comments %}
+
+            {% for comment in comments %}
+
+                <div class="comment">
+
+                    <div class="comment-content">
+
+                        {{ comment.content }}
+
+                    </div>
+
+
+                    {% if comment.post %}
+
+                        <div class="comment-post">
+
+                            On post:
+
+                            <a href="/posts/{{ comment.post.slug }}">
+
+                                {{ comment.post.title }}
+
+                            </a>
+
+                        </div>
+
+                    {% endif %}
+
+
+                    <div class="comment-id">
+
+                        Comment ID:
+                        {{ comment.id }}
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="empty-state">
+
+                You haven't written any comments yet.
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+</div>
+
+</body>
+
+</html>

@@ -32,6 +32,18 @@ class User(Base):
         nullable=True
     )
 
+    theme = Column(
+        String(20),
+        nullable=False,
+        default="light"
+    )
+
+    posts_per_page = Column(
+        Integer,
+        nullable=False,
+        default=10
+    )
+
     role = Column(
         String(20),
         nullable=False,

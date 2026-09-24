@@ -11,6 +11,8 @@ from pydantic import ValidationError
 from auth import require_current_user, require_admin
 from database import get_db
 from schemas.user import UserCreate
+from schemas.profile import ProfileUpdate
+from schemas.preferences import PreferencesUpdate
 from schemas.post import PostCreate, PostUpdate
 from models.user import User
 from models.post import Post
@@ -261,19 +263,189 @@ def login_user(
 
 
 # ==========================================================
-# Profile
+# Phase 15: User Profile
 # ==========================================================
 
-@app.get("/profile")
+@app.get("/profile", response_class=HTMLResponse)
 def profile(
+    request: Request,
+    user: User = Depends(require_current_user),
+    db: Session = Depends(get_db)
+):
+    # ------------------------------------------------------
+    # Fetch the current user's posts
+    # ------------------------------------------------------
+
+    posts = db.query(Post).filter(
+        Post.user_id == user.id
+    ).order_by(
+        Post.created_at.desc()
+    ).all()
+
+    # ------------------------------------------------------
+    # Fetch the current user's active comments
+    # ------------------------------------------------------
+
+    comments = db.query(Comment).options(
+        joinedload(Comment.post)
+    ).filter(
+        Comment.user_id == user.id,
+        Comment.is_deleted == False
+    ).order_by(
+        Comment.id.desc()
+    ).all()
+
+    # ------------------------------------------------------
+    # Render profile page
+    # ------------------------------------------------------
+
+    return templates.TemplateResponse(
+        request=request,
+        name="profile.html",
+        context={
+            "user": user,
+            "posts": posts,
+            "comments": comments
+        }
+    )
+
+
+# ==========================================================
+# Phase 15: Edit Profile - GET
+# ==========================================================
+
+@app.get("/profile/edit", response_class=HTMLResponse)
+def edit_profile_page(
+    request: Request,
     user: User = Depends(require_current_user)
 ):
-    return {
-        "message": "You are logged in.",
-        "username": user.username,
-        "email": user.email,
-        "role": user.role
-    }
+    return templates.TemplateResponse(
+        request=request,
+        name="edit_profile.html",
+        context={
+            "user": user,
+            "message": None
+        }
+    )
+
+
+# ==========================================================
+# Phase 15: Edit Profile - POST
+# ==========================================================
+
+@app.post("/profile/edit", response_class=HTMLResponse)
+def edit_profile(
+    request: Request,
+    username: str = Form(),
+    bio: str = Form(default=""),
+    theme: str = Form(),
+    posts_per_page: int = Form(),
+    user: User = Depends(require_current_user),
+    db: Session = Depends(get_db)
+):
+    # ------------------------------------------------------
+    # Clean user input
+    # ------------------------------------------------------
+
+    username = username.strip()
+    bio = bio.strip()
+    theme = theme.strip()
+
+    # ------------------------------------------------------
+    # Validate profile data
+    # ------------------------------------------------------
+
+    try:
+        profile_data = ProfileUpdate(
+            username=username,
+            bio=bio if bio else None
+        )
+
+        preferences_data = PreferencesUpdate(
+            theme=theme,
+            posts_per_page=posts_per_page
+        )
+
+    except ValidationError:
+        return templates.TemplateResponse(
+            request=request,
+            name="edit_profile.html",
+            context={
+                "user": user,
+                "message": (
+                    "Please enter valid profile and preference "
+                    "details."
+                )
+            },
+            status_code=400
+        )
+
+    # ------------------------------------------------------
+    # Check whether another user already has this username
+    # ------------------------------------------------------
+
+    existing_user = db.query(User).filter(
+        User.username == profile_data.username,
+        User.id != user.id
+    ).first()
+
+    if existing_user:
+        return templates.TemplateResponse(
+            request=request,
+            name="edit_profile.html",
+            context={
+                "user": user,
+                "message": "Username already exists."
+            },
+            status_code=400
+        )
+
+    # ------------------------------------------------------
+    # Update current user's profile
+    # ------------------------------------------------------
+
+    user.username = profile_data.username
+    user.bio = profile_data.bio
+
+    # ------------------------------------------------------
+    # Update current user's preferences
+    # ------------------------------------------------------
+
+    user.theme = preferences_data.theme
+    user.posts_per_page = preferences_data.posts_per_page
+
+    # ------------------------------------------------------
+    # Save changes
+    # ------------------------------------------------------
+
+    try:
+        db.commit()
+        db.refresh(user)
+
+    except IntegrityError:
+        db.rollback()
+
+        return templates.TemplateResponse(
+            request=request,
+            name="edit_profile.html",
+            context={
+                "user": user,
+                "message": (
+                    "Unable to update profile. "
+                    "Username may already exist."
+                )
+            },
+            status_code=400
+        )
+
+    # ------------------------------------------------------
+    # Redirect to profile page
+    # ------------------------------------------------------
+
+    return RedirectResponse(
+        url="/profile",
+        status_code=303
+    )
 
 
 # ==========================================================
@@ -448,7 +620,24 @@ def post_list(
 ):
 
     # Number of posts displayed on each page
-    posts_per_page = 5
+    # Logged-in users use their saved preference.
+    # Logged-out users keep the existing default of 5.
+    current_user = None
+
+    session_id = request.cookies.get("session_id")
+
+    if session_id:
+        current_user = db.query(User).join(
+            UserSession,
+            User.id == UserSession.user_id
+        ).filter(
+            UserSession.session_id == session_id
+        ).first()
+
+    if current_user:
+        posts_per_page = current_user.posts_per_page
+    else:
+        posts_per_page = 5
 
     # Prevent invalid page numbers
     if page < 1:
