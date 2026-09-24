@@ -1,349 +1,28 @@
-<!DOCTYPE html>
-<html>
+{% extends "base.html" %}
 
-<head>
+{% block title %}My Profile - Fast Blog{% endblock %}
 
-    <title>My Profile</title>
+{% block content %}
 
-    <style>
+<section class="profile-page">
 
-        /* ==============================
-           Theme Variables
-        ============================== */
+    <!-- ================================================== -->
+    <!-- PROFILE HEADER -->
+    <!-- ================================================== -->
 
-        :root {
-            --background: #f4f6f8;
-            --card-background: #ffffff;
-            --text: #222222;
-            --secondary-text: #666666;
-            --border: #dddddd;
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --status-background: #eef2ff;
-        }
+    <div class="profile-header card">
 
-        body.dark-theme {
-            --background: #111827;
-            --card-background: #1f2937;
-            --text: #f9fafb;
-            --secondary-text: #d1d5db;
-            --border: #374151;
-            --primary: #60a5fa;
-            --primary-hover: #93c5fd;
-            --status-background: #374151;
-        }
+        <div>
+            <h1>My Profile</h1>
 
-        /* ==============================
-           General Page Styling
-        ============================== */
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            padding: 30px 20px;
-
-            background-color: var(--background);
-            color: var(--text);
-
-            font-family:
-                Arial,
-                Helvetica,
-                sans-serif;
-
-            transition:
-                background-color 0.2s ease,
-                color 0.2s ease;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        /* ==============================
-           Header
-        ============================== */
-
-        .profile-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-
-            margin-bottom: 25px;
-        }
-
-        .profile-header h1 {
-            margin: 0;
-        }
-
-        /* ==============================
-           Cards
-        ============================== */
-
-        .card {
-            background-color: var(--card-background);
-
-            border: 1px solid var(--border);
-
-            border-radius: 10px;
-
-            padding: 24px;
-
-            margin-bottom: 25px;
-
-            box-shadow:
-                0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-
-        .card h2 {
-            margin-top: 0;
-            margin-bottom: 20px;
-        }
-
-        /* ==============================
-           Profile Information
-        ============================== */
-
-        .profile-item {
-            margin-bottom: 14px;
-        }
-
-        .profile-item strong {
-            display: inline-block;
-            min-width: 130px;
-        }
-
-        .bio {
-            color: var(--secondary-text);
-            line-height: 1.6;
-        }
-
-        /* ==============================
-           Preferences
-        ============================== */
-
-        .preference {
-            display: flex;
-
-            justify-content: space-between;
-
-            align-items: center;
-
-            padding: 12px 0;
-
-            border-bottom: 1px solid var(--border);
-        }
-
-        .preference:last-child {
-            border-bottom: none;
-        }
-
-        .preference-value {
-            background-color: var(--status-background);
-
-            padding: 6px 12px;
-
-            border-radius: 6px;
-
-            font-weight: bold;
-        }
-
-        /* ==============================
-           Posts
-        ============================== */
-
-        .post {
-            padding: 18px 0;
-
-            border-bottom: 1px solid var(--border);
-        }
-
-        .post:last-child {
-            border-bottom: none;
-        }
-
-        .post h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
-
-        .post h3 a {
-            color: var(--primary);
-            text-decoration: none;
-        }
-
-        .post h3 a:hover {
-            color: var(--primary-hover);
-            text-decoration: underline;
-        }
-
-        .post-meta {
-            color: var(--secondary-text);
-            font-size: 14px;
-        }
-
-        .status {
-            display: inline-block;
-
-            background-color: var(--status-background);
-
-            padding: 5px 10px;
-
-            border-radius: 5px;
-
-            font-size: 13px;
-
-            font-weight: bold;
-        }
-
-        /* ==============================
-           Comments
-        ============================== */
-
-        .comment {
-            padding: 18px 0;
-
-            border-bottom: 1px solid var(--border);
-        }
-
-        .comment:last-child {
-            border-bottom: none;
-        }
-
-        .comment-content {
-            line-height: 1.6;
-            margin-bottom: 8px;
-        }
-
-        .comment-post {
-            margin-top: 10px;
-            margin-bottom: 8px;
-
-            color: var(--secondary-text);
-
-            font-size: 14px;
-        }
-
-        .comment-post a {
-            color: var(--primary);
-
-            font-weight: bold;
-
-            text-decoration: none;
-        }
-
-        .comment-post a:hover {
-            color: var(--primary-hover);
-
-            text-decoration: underline;
-        }
-
-        .comment-id {
-            color: var(--secondary-text);
-            font-size: 13px;
-        }
-
-        /* ==============================
-           Buttons
-        ============================== */
-
-        .button {
-            display: inline-block;
-
-            background-color: var(--primary);
-
-            color: white;
-
-            text-decoration: none;
-
-            border: none;
-
-            padding: 10px 16px;
-
-            border-radius: 6px;
-
-            cursor: pointer;
-
-            font-size: 14px;
-        }
-
-        .button:hover {
-            background-color: var(--primary-hover);
-        }
-
-        /* ==============================
-           Empty State
-        ============================== */
-
-        .empty-state {
-            color: var(--secondary-text);
-
-            text-align: center;
-
-            padding: 20px 0;
-        }
-
-        /* ==============================
-           Responsive Design
-        ============================== */
-
-        @media (max-width: 600px) {
-
-            body {
-                padding: 20px 12px;
-            }
-
-            .profile-header {
-                flex-direction: column;
-
-                align-items: flex-start;
-
-                gap: 15px;
-            }
-
-            .card {
-                padding: 18px;
-            }
-
-            .profile-item strong {
-                display: block;
-
-                margin-bottom: 4px;
-            }
-
-            .preference {
-                flex-direction: column;
-
-                align-items: flex-start;
-
-                gap: 8px;
-            }
-        }
-
-    </style>
-
-</head>
-
-
-<body class="{{ user.theme }}-theme">
-
-<div class="container">
-
-
-    <!-- ==============================
-         Profile Header
-    ============================== -->
-
-    <div class="profile-header">
-
-        <h1>My Profile</h1>
+            <p class="section-description">
+                Manage your profile information and preferences.
+            </p>
+        </div>
 
         <a
             href="/profile/edit"
-            class="button"
+            class="btn btn-primary"
         >
             Edit Profile
         </a>
@@ -351,19 +30,28 @@
     </div>
 
 
-    <!-- ==============================
-         Profile Information
-    ============================== -->
+    <!-- ================================================== -->
+    <!-- PROFILE INFORMATION -->
+    <!-- ================================================== -->
 
     <div class="card">
 
-        <h2>Profile Information</h2>
+        <div class="section-header">
+
+            <div>
+                <h2>Profile Information</h2>
+            </div>
+
+        </div>
+
 
         <div class="profile-item">
 
             <strong>Username:</strong>
 
-            {{ user.username }}
+            <span>
+                {{ user.username }}
+            </span>
 
         </div>
 
@@ -372,7 +60,9 @@
 
             <strong>Email:</strong>
 
-            {{ user.email }}
+            <span>
+                {{ user.email }}
+            </span>
 
         </div>
 
@@ -381,7 +71,11 @@
 
             <strong>Role:</strong>
 
-            {{ user.role }}
+            <span class="status">
+
+                {{ user.role | capitalize }}
+
+            </span>
 
         </div>
 
@@ -401,13 +95,31 @@
     </div>
 
 
-    <!-- ==============================
-         User Preferences
-    ============================== -->
+    <!-- ================================================== -->
+    <!-- USER PREFERENCES -->
+    <!-- ================================================== -->
 
     <div class="card">
 
-        <h2>My Preferences</h2>
+        <div class="section-header">
+
+            <div>
+                <h2>My Preferences</h2>
+
+                <p class="section-description">
+                    Your saved display and pagination preferences.
+                </p>
+            </div>
+
+            <a
+                href="/profile/edit"
+                class="btn btn-small btn-secondary"
+            >
+                Edit Preferences
+            </a>
+
+        </div>
+
 
         <div class="preference">
 
@@ -441,19 +153,40 @@
     </div>
 
 
-    <!-- ==============================
-         User Posts
-    ============================== -->
+    <!-- ================================================== -->
+    <!-- USER POSTS -->
+    <!-- ================================================== -->
 
     <div class="card">
 
-        <h2>My Posts</h2>
+        <div class="section-header">
+
+            <div>
+
+                <h2>My Posts</h2>
+
+                <p class="section-description">
+                    Posts created by you.
+                </p>
+
+            </div>
+
+
+            <a
+                href="/posts/create"
+                class="btn btn-primary"
+            >
+                Create Post
+            </a>
+
+        </div>
+
 
         {% if posts %}
 
             {% for post in posts %}
 
-                <div class="post">
+                <article class="post">
 
                     <h3>
 
@@ -485,7 +218,64 @@
 
                     </p>
 
-                </div>
+
+                    {% if post.categories %}
+
+                    <div class="tag-list">
+
+                        {% for category in post.categories %}
+
+                        <span class="category-tag">
+
+                            {{ category.name }}
+
+                        </span>
+
+                        {% endfor %}
+
+                    </div>
+
+                    {% endif %}
+
+
+                    {% if post.tags %}
+
+                    <div class="tag-list">
+
+                        {% for tag in post.tags %}
+
+                        <span class="post-tag">
+
+                            #{{ tag.name }}
+
+                        </span>
+
+                        {% endfor %}
+
+                    </div>
+
+                    {% endif %}
+
+
+                    <div class="post-card-actions">
+
+                        <a
+                            href="/posts/{{ post.slug }}"
+                            class="btn btn-small btn-secondary"
+                        >
+                            View Post
+                        </a>
+
+                        <a
+                            href="/posts/{{ post.id }}/edit"
+                            class="btn btn-small btn-secondary"
+                        >
+                            Edit
+                        </a>
+
+                    </div>
+
+                </article>
 
             {% endfor %}
 
@@ -493,7 +283,22 @@
 
             <div class="empty-state">
 
-                You haven't created any posts yet.
+                <div class="empty-state-icon">
+                    📝
+                </div>
+
+                <h3>No posts yet</h3>
+
+                <p>
+                    You haven't created any posts yet.
+                </p>
+
+                <a
+                    href="/posts/create"
+                    class="btn btn-primary"
+                >
+                    Create Your First Post
+                </a>
 
             </div>
 
@@ -502,23 +307,50 @@
     </div>
 
 
-    <!-- ==============================
-         User Comments
-    ============================== -->
+    <!-- ================================================== -->
+    <!-- USER COMMENTS -->
+    <!-- ================================================== -->
 
     <div class="card">
 
-        <h2>My Comments</h2>
+        <div class="section-header">
+
+            <div>
+
+                <h2>My Comments</h2>
+
+                <p class="section-description">
+                    Your comments and activity across the blog.
+                </p>
+
+            </div>
+
+        </div>
+
 
         {% if comments %}
 
             {% for comment in comments %}
 
-                <div class="comment">
+                <article class="comment">
 
                     <div class="comment-content">
 
-                        {{ comment.content }}
+                        {% if comment.is_deleted %}
+
+                            <span class="status status-deleted">
+                                Deleted
+                            </span>
+
+                            <p>
+                                [Comment deleted]
+                            </p>
+
+                        {% else %}
+
+                            {{ comment.content }}
+
+                        {% endif %}
 
                     </div>
 
@@ -547,7 +379,7 @@
 
                     </div>
 
-                </div>
+                </article>
 
             {% endfor %}
 
@@ -555,7 +387,22 @@
 
             <div class="empty-state">
 
-                You haven't written any comments yet.
+                <div class="empty-state-icon">
+                    💬
+                </div>
+
+                <h3>No comments yet</h3>
+
+                <p>
+                    You haven't written any comments yet.
+                </p>
+
+                <a
+                    href="/posts"
+                    class="btn btn-primary"
+                >
+                    Explore Posts
+                </a>
 
             </div>
 
@@ -564,8 +411,28 @@
     </div>
 
 
-</div>
+    <!-- ================================================== -->
+    <!-- PROFILE ACTIONS -->
+    <!-- ================================================== -->
 
-</body>
+    <div class="page-actions">
 
-</html>
+        <a
+            href="/posts"
+            class="btn btn-secondary"
+        >
+            ← Browse Posts
+        </a>
+
+        <a
+            href="/profile/edit"
+            class="btn btn-primary"
+        >
+            Edit Profile
+        </a>
+
+    </div>
+
+</section>
+
+{% endblock %}

@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Fast Blog{% endblock %}
+
+{% block content %}
+
+<section class="admin-page">
+
+    <!-- ================================================== -->
+    <!-- ADMIN HEADER -->
+    <!-- ================================================== -->
+
+    <div class="admin-header card">
+
+        <div>
+
+            <span class="status status-published">
+                Administrator
+            </span>
+
+            <h1>
+                Admin Dashboard
+            </h1>
+
+            <p class="section-description">
+                Manage and monitor your Fast Blog application.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================== -->
+    <!-- WELCOME MESSAGE -->
+    <!-- ================================================== -->
+
+    <div class="message message-success">
+
+        {{ message }}
+
+    </div>
+
+
+    <!-- ================================================== -->
+    <!-- ADMIN PROFILE -->
+    <!-- ================================================== -->
+
+    <div class="admin-grid">
+
+        <div class="card admin-card">
+
+            <div class="admin-card-icon">
+                👤
+            </div>
+
+            <h2>Administrator</h2>
+
+            <p class="admin-card-description">
+                You are currently logged in with administrator privileges.
+            </p>
+
+
+            <div class="admin-info">
+
+                <div class="admin-info-item">
+
+                    <span class="admin-info-label">
+                        Username
+                    </span>
+
+                    <strong>
+                        {{ username }}
+                    </strong>
+
+                </div>
+
+
+                <div class="admin-info-item">
+
+                    <span class="admin-info-label">
+                        Role
+                    </span>
+
+                    <strong>
+                        {{ role | capitalize }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================== -->
+        <!-- CONTENT MANAGEMENT -->
+        <!-- ================================================== -->
+
+        <div class="card admin-card">
+
+            <div class="admin-card-icon">
+                📝
+            </div>
+
+            <h2>Content Management</h2>
+
+            <p class="admin-card-description">
+                Access the blog content and manage posts.
+            </p>
+
+            <div class="admin-card-actions">
+
+                <a
+                    href="/posts"
+                    class="button"
+                >
+                    View Posts
+                </a>
+
+                <a
+                    href="/posts/create"
+                    class="button button-secondary"
+                >
+                    Create Post
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================== -->
+        <!-- COMMENT MODERATION -->
+        <!-- ================================================== -->
+
+        <div class="card admin-card">
+
+            <div class="admin-card-icon">
+                💬
+            </div>
+
+            <h2>Comment Moderation</h2>
+
+            <p class="admin-card-description">
+                Review comments and use the available moderation controls.
+            </p>
+
+            <div class="admin-card-actions">
+
+                <a
+                    href="/posts"
+                    class="button button-secondary"
+                >
+                    Browse Posts
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================== -->
+        <!-- PROFILE -->
+        <!-- ================================================== -->
+
+        <div class="card admin-card">
+
+            <div class="admin-card-icon">
+                ⚙️
+            </div>
+
+            <h2>My Profile</h2>
+
+            <p class="admin-card-description">
+                View or update your administrator profile and preferences.
+            </p>
+
+            <div class="admin-card-actions">
+
+                <a
+                    href="/profile"
+                    class="button"
+                >
+                    View Profile
+                </a>
+
+                <a
+                    href="/profile/edit"
+                    class="button button-secondary"
+                >
+                    Edit Profile
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================== -->
+    <!-- QUICK ACTIONS -->
+    <!-- ================================================== -->
+
+    <div class="card admin-quick-actions">
+
+        <div class="section-header">
+
+            <div>
+
+                <h2>Quick Actions</h2>
+
+                <p class="section-description">
+                    Common actions available from the administrator dashboard.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="quick-action-list">
+
+            <a
+                href="/"
+                class="quick-action"
+            >
+
+                <span class="quick-action-icon">
+                    🏠
+                </span>
+
+                <span>
+
+                    <strong>
+                        Home
+                    </strong>
+
+                    <small>
+                        Return to the homepage.
+                    </small>
+
+                </span>
+
+            </a>
+
+
+            <a
+                href="/posts"
+                class="quick-action"
+            >
+
+                <span class="quick-action-icon">
+                    📚
+                </span>
+
+                <span>
+
+                    <strong>
+                        All Posts
+                    </strong>
+
+                    <small>
+                        Browse and filter blog posts.
+                    </small>
+
+                </span>
+
+            </a>
+
+
+            <a
+                href="/posts/create"
+                class="quick-action"
+            >
+
+                <span class="quick-action-icon">
+                    ✍️
+                </span>
+
+                <span>
+
+                    <strong>
+                        Create Post
+                    </strong>
+
+                    <small>
+                        Create a new blog post.
+                    </small>
+
+                </span>
+
+            </a>
+
+
+            <a
+                href="/profile"
+                class="quick-action"
+            >
+
+                <span class="quick-action-icon">
+                    👤
+                </span>
+
+                <span>
+
+                    <strong>
+                        Profile
+                    </strong>
+
+                    <small>
+                        View your profile and preferences.
+                    </small>
+
+                </span>
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================================== -->
+    <!-- ADMIN NOTICE -->
+    <!-- ================================================== -->
+
+    <div class="admin-notice">
+
+        <strong>
+            Admin access
+        </strong>
+
+        <p>
+            This dashboard is available only to authenticated users
+            with administrator privileges.
+        </p>
+
+    </div>
+
+
+    <!-- ================================================== -->
+    <!-- FOOTER ACTION -->
+    <!-- ================================================== -->
+
+    <div class="page-actions">
+
+        <a
+            href="/"
+            class="button button-secondary"
+        >
+            ← Back to Home
+        </a>
+
+        <a
+            href="/posts"
+            class="button"
+        >
+            Browse Posts
+        </a>
+
+    </div>
+
+</section>
+
+{% endblock %}

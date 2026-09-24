@@ -6,8 +6,47 @@ Home - Fast Blog
 
 {% block content %}
 
-<h1>Welcome to Fast Blog</h1>
+<section class="hero">
 
-<p>A multi-user blogging platform built with FastAPI.</p>
+    <h1>
+        Welcome to Fast Blog
+    </h1>
+
+    <p>
+        A multi-user blogging platform built with FastAPI.
+    </p>
+
+    <div class="post-actions">
+
+        <a
+            href="/posts"
+            class="button"
+        >
+            Explore Posts
+        </a>
+
+        {% if user is defined and user %}
+
+            <a
+                href="/posts/create"
+                class="button button-secondary"
+            >
+                Create a Post
+            </a>
+
+        {% else %}
+
+            <a
+                href="/register"
+                class="button button-secondary"
+            >
+                Create an Account
+            </a>
+
+        {% endif %}
+
+    </div>
+
+</section>
 
 {% endblock %}

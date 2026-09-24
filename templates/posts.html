@@ -1,459 +1,478 @@
 {% extends "base.html" %}
 
+{% block title %}
+Posts - Fast Blog
+{% endblock %}
+
 {% block content %}
 
-<h1>All Posts</h1>
+<div class="page-container">
 
-<a href="/posts/create">Create New Post</a>
+    <!-- =====================================================
+         PAGE HEADER
+         ===================================================== -->
 
-<hr>
+    <div class="card">
 
-<!-- Search -->
+        <h1 class="page-title">
+            Blog Posts
+        </h1>
 
-<form method="get" action="/posts">
+        <p class="page-subtitle">
+            Explore posts, search for topics, and filter content.
+        </p>
 
-    <input
-        type="text"
-        name="search"
-        placeholder="Search posts..."
-        value="{{ search }}"
-    >
-
-    <!-- Preserve sorting -->
-    <input
-        type="hidden"
-        name="sort"
-        value="{{ sort }}"
-    >
-
-    <!-- Preserve status filter -->
-    <input
-        type="hidden"
-        name="status"
-        value="{{ status }}"
-    >
-
-    <!-- Preserve category filter -->
-    <input
-        type="hidden"
-        name="category_id"
-        value="{{ category_id or '' }}"
-    >
-
-    <!-- Preserve tag filter -->
-    <input
-        type="hidden"
-        name="tag_id"
-        value="{{ tag_id or '' }}"
-    >
-
-    <button type="submit">
-        Search
-    </button>
-
-</form>
+    </div>
 
 
-{% if search %}
+    <!-- =====================================================
+         SEARCH & FILTERS
+         ===================================================== -->
 
-    <p>
-        Search results for:
-        <strong>{{ search }}</strong>
-    </p>
+    <div class="card">
 
-{% endif %}
+        <h2>
+            Search & Filter
+        </h2>
 
-
-<hr>
-
-
-<!-- Sorting -->
-
-<form method="get" action="/posts">
-
-    <!-- Preserve search -->
-    <input
-        type="hidden"
-        name="search"
-        value="{{ search }}"
-    >
-
-    <!-- Preserve status -->
-    <input
-        type="hidden"
-        name="status"
-        value="{{ status }}"
-    >
-
-    <!-- Preserve category -->
-    <input
-        type="hidden"
-        name="category_id"
-        value="{{ category_id or '' }}"
-    >
-
-    <!-- Preserve tag -->
-    <input
-        type="hidden"
-        name="tag_id"
-        value="{{ tag_id or '' }}"
-    >
-
-    <label for="sort">
-        Sort by:
-    </label>
-
-    <select
-        name="sort"
-        id="sort"
-        onchange="this.form.submit()"
-    >
-
-        <option
-            value="newest"
-            {% if sort == "newest" %}selected{% endif %}
+        <form
+            method="GET"
+            action="/posts"
         >
-            Newest
-        </option>
 
-        <option
-            value="oldest"
-            {% if sort == "oldest" %}selected{% endif %}
-        >
-            Oldest
-        </option>
+            <div class="filters">
 
-    </select>
+                <!-- Search -->
 
-</form>
+                <div class="filter-group">
 
+                    <label for="search">
+                        Search
+                    </label>
 
-<hr>
+                    <input
+                        type="text"
+                        id="search"
+                        name="search"
+                        value="{{ search }}"
+                        placeholder="Search posts..."
+                    >
 
-
-<!-- Status Filtering -->
-
-<form method="get" action="/posts">
-
-    <!-- Preserve search -->
-    <input
-        type="hidden"
-        name="search"
-        value="{{ search }}"
-    >
-
-    <!-- Preserve sorting -->
-    <input
-        type="hidden"
-        name="sort"
-        value="{{ sort }}"
-    >
-
-    <!-- Preserve category -->
-    <input
-        type="hidden"
-        name="category_id"
-        value="{{ category_id or '' }}"
-    >
-
-    <!-- Preserve tag -->
-    <input
-        type="hidden"
-        name="tag_id"
-        value="{{ tag_id or '' }}"
-    >
-
-    <label for="status">
-        Filter by Status:
-    </label>
-
-    <select
-        name="status"
-        id="status"
-        onchange="this.form.submit()"
-    >
-
-        <option
-            value=""
-            {% if status == "" %}selected{% endif %}
-        >
-            All
-        </option>
-
-        <option
-            value="published"
-            {% if status == "published" %}selected{% endif %}
-        >
-            Published
-        </option>
-
-        <option
-            value="draft"
-            {% if status == "draft" %}selected{% endif %}
-        >
-            Draft
-        </option>
-
-    </select>
-
-</form>
+                </div>
 
 
-<hr>
+                <!-- Status -->
+
+                <div class="filter-group">
+
+                    <label for="status">
+                        Status
+                    </label>
+
+                    <select
+                        id="status"
+                        name="status"
+                    >
+
+                        <option
+                            value=""
+                            {% if status == "" %}
+                                selected
+                            {% endif %}
+                        >
+                            All
+                        </option>
+
+                        <option
+                            value="published"
+                            {% if status == "published" %}
+                                selected
+                            {% endif %}
+                        >
+                            Published
+                        </option>
+
+                        <option
+                            value="draft"
+                            {% if status == "draft" %}
+                                selected
+                            {% endif %}
+                        >
+                            Draft
+                        </option>
+
+                    </select>
+
+                </div>
 
 
-<!-- Category Filtering -->
+                <!-- Category -->
 
-<form method="get" action="/posts">
+                <div class="filter-group">
 
-    <!-- Preserve search -->
-    <input
-        type="hidden"
-        name="search"
-        value="{{ search }}"
-    >
+                    <label for="category_id">
+                        Category
+                    </label>
 
-    <!-- Preserve sorting -->
-    <input
-        type="hidden"
-        name="sort"
-        value="{{ sort }}"
-    >
+                    <select
+                        id="category_id"
+                        name="category_id"
+                    >
 
-    <!-- Preserve status -->
-    <input
-        type="hidden"
-        name="status"
-        value="{{ status }}"
-    >
+                        <option
+                            value=""
+                            {% if category_id is none %}
+                                selected
+                            {% endif %}
+                        >
+                            All Categories
+                        </option>
 
-    <!-- Preserve tag -->
-    <input
-        type="hidden"
-        name="tag_id"
-        value="{{ tag_id or '' }}"
-    >
+                        {% for category in categories %}
 
-    <label for="category_id">
-        Filter by Category:
-    </label>
+                            <option
+                                value="{{ category.id }}"
+                                {% if category_id == category.id %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ category.name }}
+                            </option>
 
-    <select
-        name="category_id"
-        id="category_id"
-        onchange="this.form.submit()"
-    >
+                        {% endfor %}
 
-        <option
-            value=""
-            {% if not category_id %}selected{% endif %}
-        >
-            All Categories
-        </option>
+                    </select>
 
-        {% for category in categories %}
-
-            <option
-                value="{{ category.id }}"
-                {% if category_id == category.id %}selected{% endif %}
-            >
-                {{ category.name }}
-            </option>
-
-        {% endfor %}
-
-    </select>
-
-</form>
+                </div>
 
 
-<hr>
+                <!-- Tag -->
+
+                <div class="filter-group">
+
+                    <label for="tag_id">
+                        Tag
+                    </label>
+
+                    <select
+                        id="tag_id"
+                        name="tag_id"
+                    >
+
+                        <option
+                            value=""
+                            {% if tag_id is none %}
+                                selected
+                            {% endif %}
+                        >
+                            All Tags
+                        </option>
+
+                        {% for tag in tags %}
+
+                            <option
+                                value="{{ tag.id }}"
+                                {% if tag_id == tag.id %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ tag.name }}
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
 
 
-<!-- Tag Filtering -->
+                <!-- Sort -->
 
-<form method="get" action="/posts">
+                <div class="filter-group">
 
-    <!-- Preserve search -->
-    <input
-        type="hidden"
-        name="search"
-        value="{{ search }}"
-    >
+                    <label for="sort">
+                        Sort
+                    </label>
 
-    <!-- Preserve sorting -->
-    <input
-        type="hidden"
-        name="sort"
-        value="{{ sort }}"
-    >
+                    <select
+                        id="sort"
+                        name="sort"
+                    >
 
-    <!-- Preserve status -->
-    <input
-        type="hidden"
-        name="status"
-        value="{{ status }}"
-    >
+                        <option
+                            value="newest"
+                            {% if sort == "newest" %}
+                                selected
+                            {% endif %}
+                        >
+                            Newest First
+                        </option>
 
-    <!-- Preserve category -->
-    <input
-        type="hidden"
-        name="category_id"
-        value="{{ category_id or '' }}"
-    >
+                        <option
+                            value="oldest"
+                            {% if sort == "oldest" %}
+                                selected
+                            {% endif %}
+                        >
+                            Oldest First
+                        </option>
 
-    <label for="tag_id">
-        Filter by Tag:
-    </label>
+                    </select>
 
-    <select
-        name="tag_id"
-        id="tag_id"
-        onchange="this.form.submit()"
-    >
+                </div>
 
-        <option
-            value=""
-            {% if not tag_id %}selected{% endif %}
-        >
-            All Tags
-        </option>
-
-        {% for tag in tags %}
-
-            <option
-                value="{{ tag.id }}"
-                {% if tag_id == tag.id %}selected{% endif %}
-            >
-                {{ tag.name }}
-            </option>
-
-        {% endfor %}
-
-    </select>
-
-</form>
+            </div>
 
 
-<hr>
+            <!-- Filter Actions -->
 
+            <div class="filter-actions">
 
-<!-- Posts -->
+                <button
+                    type="submit"
+                    class="button"
+                >
+                    Apply Filters
+                </button>
 
-{% if posts %}
-
-    {% for post in posts %}
-
-        <article>
-
-            <h2>
-                <a href="/posts/{{ post.slug }}">
-                    {{ post.title }}
+                <a
+                    href="/posts"
+                    class="button button-secondary"
+                >
+                    Clear Filters
                 </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <!-- =====================================================
+         RESULTS SUMMARY
+         ===================================================== -->
+
+    <div class="card">
+
+        <div
+            style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 15px;
+                flex-wrap: wrap;
+            "
+        >
+
+            <h2 style="margin: 0;">
+                Posts
             </h2>
 
-            <p>
-                By {{ post.user.username }}
-            </p>
+            <span class="post-meta">
 
-            <p>
-                Status: {{ post.status }}
-            </p>
+                {% if total_posts == 1 %}
 
-            <p>
-                Created: {{ post.created_at }}
-            </p>
+                    1 post found
 
-            <!-- Categories -->
+                {% else %}
 
-            {% if post.categories %}
+                    {{ total_posts }} posts found
+
+                {% endif %}
+
+            </span>
+
+        </div>
+
+
+        <!-- =================================================
+             POST LIST
+             ================================================= -->
+
+        {% if posts %}
+
+            {% for post in posts %}
+
+                <article class="post">
+
+                    <h3>
+
+                        <a href="/posts/{{ post.slug }}">
+                            {{ post.title }}
+                        </a>
+
+                    </h3>
+
+
+                    <!-- Post Metadata -->
+
+                    <p class="post-meta">
+
+                        By
+                        <strong>
+                            {{ post.user.username }}
+                        </strong>
+
+                        &nbsp;•&nbsp;
+
+                        {{ post.created_at }}
+
+                    </p>
+
+
+                    <!-- Status -->
+
+                    <p>
+
+                        <span class="status">
+
+                            {{ post.status | capitalize }}
+
+                        </span>
+
+                    </p>
+
+
+                    <!-- Categories -->
+
+                    {% if post.categories %}
+
+                        <div>
+
+                            <strong>
+                                Categories:
+                            </strong>
+
+                            {% for category in post.categories %}
+
+                                <span class="category">
+                                    {{ category.name }}
+                                </span>
+
+                            {% endfor %}
+
+                        </div>
+
+                    {% endif %}
+
+
+                    <!-- Tags -->
+
+                    {% if post.tags %}
+
+                        <div>
+
+                            <strong>
+                                Tags:
+                            </strong>
+
+                            {% for tag in post.tags %}
+
+                                <span class="tag">
+                                    #{{ tag.name }}
+                                </span>
+
+                            {% endfor %}
+
+                        </div>
+
+                    {% endif %}
+
+
+                    <!-- Open Post -->
+
+                    <div class="post-actions">
+
+                        <a
+                            href="/posts/{{ post.slug }}"
+                            class="button"
+                        >
+                            Read Post
+                        </a>
+
+                    </div>
+
+                </article>
+
+            {% endfor %}
+
+
+        {% else %}
+
+            <!-- =================================================
+                 EMPTY STATE
+                 ================================================= -->
+
+            <div class="empty-state">
+
+                <h3>
+                    No posts found
+                </h3>
 
                 <p>
-                    <strong>Categories:</strong>
-
-                    {% for category in post.categories %}
-
-                        {{ category.name }}
-
-                        {% if not loop.last %}
-                            ,
-                        {% endif %}
-
-                    {% endfor %}
-
+                    Try changing your search or filter options.
                 </p>
 
-            {% endif %}
+                <a
+                    href="/posts"
+                    class="button button-secondary"
+                >
+                    View All Posts
+                </a>
 
-
-            <!-- Tags -->
-
-            {% if post.tags %}
-
-                <p>
-                    <strong>Tags:</strong>
-
-                    {% for tag in post.tags %}
-
-                        {{ tag.name }}
-
-                        {% if not loop.last %}
-                            ,
-                        {% endif %}
-
-                    {% endfor %}
-
-                </p>
-
-            {% endif %}
-
-            <hr>
-
-        </article>
-
-    {% endfor %}
-
-{% else %}
-
-    <p>No posts found.</p>
-
-{% endif %}
-
-
-<!-- Pagination -->
-
-{% if total_pages > 1 %}
-
-    <div>
-
-        {% if page > 1 %}
-
-            <a
-                href="/posts?page={{ page - 1 }}&sort={{ sort }}&status={{ status }}&category_id={{ category_id or '' }}&tag_id={{ tag_id or '' }}{% if search %}&search={{ search }}{% endif %}"
-            >
-                Previous
-            </a>
+            </div>
 
         {% endif %}
 
 
-        <span>
-            Page {{ page }} of {{ total_pages }}
-        </span>
+        <!-- =================================================
+             PAGINATION
+             ================================================= -->
+
+        {% if total_pages > 1 %}
+
+            <div class="pagination">
+
+                {% if page > 1 %}
+
+                    <a
+                        href="/posts?search={{ search }}&status={{ status }}&sort={{ sort }}&category_id={{ category_id or '' }}&tag_id={{ tag_id or '' }}&page={{ page - 1 }}"
+                        class="button button-secondary"
+                    >
+                        ← Previous
+                    </a>
+
+                {% endif %}
 
 
-        {% if page < total_pages %}
+                <span class="pagination-info">
 
-            <a
-                href="/posts?page={{ page + 1 }}&sort={{ sort }}&status={{ status }}&category_id={{ category_id or '' }}&tag_id={{ tag_id or '' }}{% if search %}&search={{ search }}{% endif %}"
-            >
-                Next
-            </a>
+                    Page
+                    <strong>{{ page }}</strong>
+                    of
+                    <strong>{{ total_pages }}</strong>
+
+                </span>
+
+
+                {% if page < total_pages %}
+
+                    <a
+                        href="/posts?search={{ search }}&status={{ status }}&sort={{ sort }}&category_id={{ category_id or '' }}&tag_id={{ tag_id or '' }}&page={{ page + 1 }}"
+                        class="button button-secondary"
+                    >
+                        Next →
+                    </a>
+
+                {% endif %}
+
+            </div>
 
         {% endif %}
 
     </div>
 
-{% endif %}
+</div>
 
 {% endblock %}

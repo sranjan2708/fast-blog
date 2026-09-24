@@ -2,29 +2,160 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>
         {% block title %}
         Fast Blog
         {% endblock %}
     </title>
+
+    <!-- Global CSS -->
+    <link
+        rel="stylesheet"
+        href="/static/css/style.css"
+    >
+
+    {% block head %}
+    {% endblock %}
+
 </head>
 
-<body>
+<body
+    {% if user is defined and user %}
+        class="{{ user.theme }}-theme"
+    {% endif %}
+>
 
-    <nav>
-        <h2>Fast Blog</h2>
+    <!-- =====================================================
+         NAVBAR
+         ===================================================== -->
+
+    <nav class="navbar">
+
+        <div class="navbar-container">
+
+            <!-- Brand -->
+
+            <a
+                href="/"
+                class="navbar-brand"
+            >
+                Fast Blog
+            </a>
+
+
+            <!-- Mobile Menu Button -->
+
+            <button
+                type="button"
+                class="navbar-toggle"
+                aria-label="Toggle navigation"
+            >
+                ☰
+            </button>
+
+
+            <!-- Navigation Links -->
+
+            <div class="navbar-links">
+
+                <a href="/">
+                    Home
+                </a>
+
+                <a href="/posts">
+                    Posts
+                </a>
+
+
+                {% if user is defined and user %}
+
+                    <a href="/posts/create">
+                        Create Post
+                    </a>
+
+                    <a href="/profile">
+                        Profile
+                    </a>
+
+
+                    {% if user.role == "admin" %}
+
+                        <a href="/admin">
+                            Admin
+                        </a>
+
+                    {% endif %}
+
+
+                    <a href="/logout">
+                        Logout
+                    </a>
+
+                {% else %}
+
+                    <a href="/login">
+                        Login
+                    </a>
+
+                    <a href="/register">
+                        Register
+                    </a>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
     </nav>
 
+
+    <!-- =====================================================
+         MAIN CONTENT
+         ===================================================== -->
+
     <main>
+
         {% block content %}
         {% endblock %}
+
     </main>
 
-    <footer>
-        <p>Fast Blog</p>
+
+    <!-- =====================================================
+         FOOTER
+         ===================================================== -->
+
+    <footer class="footer">
+
+        <p>
+            Fast Blog
+        </p>
+
+        <p>
+            Built with FastAPI, MySQL and Jinja2.
+        </p>
+
     </footer>
+
+
+    <!-- =====================================================
+         GLOBAL JAVASCRIPT
+         ===================================================== -->
+
+    <script src="/static/js/main.js"></script>
+
+
+    {% block scripts %}
+    {% endblock %}
 
 </body>
 

@@ -1,0 +1,1040 @@
+/* =========================================================
+   FAST BLOG - GLOBAL STYLES
+   Phase 16: Frontend & Responsive UI
+   ========================================================= */
+
+
+/* =========================================================
+   1. THEME VARIABLES
+   ========================================================= */
+
+:root {
+    --background: #f4f6f8;
+    --card-background: #ffffff;
+    --text: #222222;
+    --secondary-text: #666666;
+    --border: #dddddd;
+
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+
+    --success: #15803d;
+    --danger: #dc2626;
+    --warning: #d97706;
+
+    --status-background: #eef2ff;
+    --input-background: #ffffff;
+
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+
+/* =========================================================
+   DARK THEME
+   ========================================================= */
+
+body.dark-theme {
+    --background: #111827;
+    --card-background: #1f2937;
+    --text: #f9fafb;
+    --secondary-text: #d1d5db;
+    --border: #374151;
+
+    --primary: #60a5fa;
+    --primary-hover: #93c5fd;
+
+    --status-background: #374151;
+    --input-background: #111827;
+
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+
+/* =========================================================
+   2. RESET / GLOBAL
+   ========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+
+    background-color: var(--background);
+    color: var(--text);
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    line-height: 1.6;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--primary-hover);
+}
+
+
+/* =========================================================
+   3. NAVBAR
+   ========================================================= */
+
+.navbar {
+    background-color: var(--card-background);
+    border-bottom: 1px solid var(--border);
+
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    box-shadow: var(--shadow);
+}
+
+.navbar-container {
+    max-width: 1200px;
+    margin: 0 auto;
+
+    min-height: 64px;
+    padding: 0 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navbar-brand {
+    font-size: 22px;
+    font-weight: bold;
+
+    color: var(--text);
+}
+
+.navbar-brand:hover {
+    color: var(--primary);
+}
+
+.navbar-links {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.navbar-links a {
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.navbar-links a:hover {
+    color: var(--primary);
+}
+
+.navbar-toggle {
+    display: none;
+
+    background: transparent;
+    border: none;
+
+    color: var(--text);
+
+    font-size: 24px;
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   4. MAIN CONTENT
+   ========================================================= */
+
+main {
+    min-height: calc(100vh - 130px);
+}
+
+.page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+
+    padding: 40px 20px;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+
+    padding: 30px 20px;
+}
+
+
+/* =========================================================
+   5. HEADINGS
+   ========================================================= */
+
+h1,
+h2,
+h3,
+h4 {
+    color: var(--text);
+}
+
+.page-title {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.page-subtitle {
+    color: var(--secondary-text);
+    margin-top: 0;
+}
+
+
+/* =========================================================
+   6. CARDS
+   ========================================================= */
+
+.card {
+    background-color: var(--card-background);
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    padding: 24px;
+    margin-bottom: 25px;
+
+    box-shadow: var(--shadow);
+}
+
+.card h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+
+/* =========================================================
+   7. FORMS
+   ========================================================= */
+
+.form-container {
+    max-width: 600px;
+    margin: 30px auto;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    font-weight: 600;
+}
+
+input,
+textarea,
+select {
+    width: 100%;
+
+    padding: 11px 12px;
+
+    border: 1px solid var(--border);
+    border-radius: 6px;
+
+    background-color: var(--input-background);
+    color: var(--text);
+
+    font-family: inherit;
+    font-size: 15px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+textarea {
+    min-height: 150px;
+    resize: vertical;
+}
+
+select[multiple] {
+    min-height: 130px;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+
+    border-color: var(--primary);
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.form-help {
+    display: block;
+
+    margin-top: 5px;
+
+    color: var(--secondary-text);
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   8. BUTTONS
+   ========================================================= */
+
+.button {
+    display: inline-block;
+
+    background-color: var(--primary);
+    color: white;
+
+    text-decoration: none;
+
+    border: none;
+    border-radius: 6px;
+
+    padding: 10px 16px;
+
+    cursor: pointer;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition:
+        background-color 0.2s ease,
+        transform 0.1s ease;
+}
+
+.button:hover {
+    background-color: var(--primary-hover);
+    color: white;
+}
+
+.button:active {
+    transform: translateY(1px);
+}
+
+.button-secondary {
+    background-color: transparent;
+    color: var(--primary);
+
+    border: 1px solid var(--primary);
+}
+
+.button-secondary:hover {
+    background-color: var(--primary);
+    color: white;
+}
+
+.button-danger {
+    background-color: var(--danger);
+}
+
+.button-danger:hover {
+    background-color: #b91c1c;
+}
+
+.button-success {
+    background-color: var(--success);
+}
+
+.button-warning {
+    background-color: var(--warning);
+}
+
+
+/* =========================================================
+   9. MESSAGES
+   ========================================================= */
+
+.message {
+    padding: 12px 15px;
+
+    margin-bottom: 20px;
+
+    border-radius: 6px;
+
+    border: 1px solid var(--border);
+
+    background-color: var(--status-background);
+}
+
+.message-success {
+    border-left: 4px solid var(--success);
+}
+
+.message-error {
+    border-left: 4px solid var(--danger);
+}
+
+.message-warning {
+    border-left: 4px solid var(--warning);
+}
+
+
+/* =========================================================
+   10. HOME PAGE
+   ========================================================= */
+
+.hero {
+    text-align: center;
+
+    padding: 70px 20px;
+}
+
+.hero h1 {
+    font-size: 42px;
+    margin-bottom: 15px;
+}
+
+.hero p {
+    max-width: 650px;
+    margin: 0 auto 25px;
+
+    color: var(--secondary-text);
+
+    font-size: 18px;
+}
+
+
+/* =========================================================
+   11. POSTS
+   ========================================================= */
+
+.post {
+    padding: 18px 0;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.post:last-child {
+    border-bottom: none;
+}
+
+.post h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.post h3 a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.post h3 a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.post-meta {
+    color: var(--secondary-text);
+    font-size: 14px;
+}
+
+.post-content {
+    line-height: 1.7;
+}
+
+.post-actions {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 10px;
+
+    margin-top: 15px;
+}
+
+
+/* =========================================================
+   12. STATUS / TAGS / CATEGORIES
+   ========================================================= */
+
+.status {
+    display: inline-block;
+
+    background-color: var(--status-background);
+
+    padding: 5px 10px;
+
+    border-radius: 5px;
+
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.tag,
+.category {
+    display: inline-block;
+
+    padding: 4px 9px;
+
+    margin: 3px;
+
+    background-color: var(--status-background);
+
+    border-radius: 5px;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   13. FILTERS
+   ========================================================= */
+
+.filters {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(180px, 1fr));
+
+    gap: 15px;
+
+    margin-bottom: 25px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.filter-actions {
+    display: flex;
+
+    align-items: end;
+
+    gap: 10px;
+
+    flex-wrap: wrap;
+}
+
+
+/* =========================================================
+   14. PROFILE
+   ========================================================= */
+
+.profile-header {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    margin-bottom: 25px;
+}
+
+.profile-header h1 {
+    margin: 0;
+}
+
+.profile-item {
+    margin-bottom: 14px;
+}
+
+.profile-item strong {
+    display: inline-block;
+
+    min-width: 130px;
+}
+
+.bio {
+    color: var(--secondary-text);
+
+    line-height: 1.6;
+}
+
+.preference {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 12px 0;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.preference:last-child {
+    border-bottom: none;
+}
+
+.preference-value {
+    background-color: var(--status-background);
+
+    padding: 6px 12px;
+
+    border-radius: 6px;
+
+    font-weight: bold;
+}
+
+
+/* =========================================================
+   15. COMMENTS
+   ========================================================= */
+
+.comment {
+    padding: 18px 0;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.comment:last-child {
+    border-bottom: none;
+}
+
+.comment-content {
+    line-height: 1.6;
+
+    margin-bottom: 8px;
+}
+
+.comment-post {
+    margin-top: 10px;
+    margin-bottom: 8px;
+
+    color: var(--secondary-text);
+
+    font-size: 14px;
+}
+
+.comment-post a {
+    color: var(--primary);
+
+    font-weight: bold;
+
+    text-decoration: none;
+}
+
+.comment-post a:hover {
+    color: var(--primary-hover);
+
+    text-decoration: underline;
+}
+
+.comment-id {
+    color: var(--secondary-text);
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   16. ENGAGEMENT
+   ========================================================= */
+
+.engagement {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 20px;
+
+    padding: 15px 0;
+
+    margin: 20px 0;
+
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.engagement-item {
+    color: var(--secondary-text);
+}
+
+.engagement-item strong {
+    color: var(--text);
+}
+
+
+/* =========================================================
+   17. PAGINATION
+   ========================================================= */
+
+.pagination {
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    gap: 15px;
+
+    margin-top: 30px;
+}
+
+.pagination-info {
+    color: var(--secondary-text);
+}
+
+
+/* =========================================================
+   18. EMPTY STATE
+   ========================================================= */
+
+.empty-state {
+    color: var(--secondary-text);
+
+    text-align: center;
+
+    padding: 35px 20px;
+}
+
+
+/* =========================================================
+   19. FOOTER
+   ========================================================= */
+
+.footer {
+    background-color: var(--card-background);
+
+    border-top: 1px solid var(--border);
+
+    padding: 25px 20px;
+
+    text-align: center;
+
+    color: var(--secondary-text);
+}
+
+
+/* =========================================================
+   20. MOBILE NAVIGATION
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+    .navbar-container {
+        flex-wrap: wrap;
+    }
+
+    .navbar-toggle {
+        display: block;
+    }
+
+    .navbar-links {
+        display: none;
+
+        width: 100%;
+
+        flex-direction: column;
+        align-items: flex-start;
+
+        padding: 15px 0;
+    }
+
+    .navbar-links.active {
+        display: flex;
+    }
+
+    .navbar-links a {
+        width: 100%;
+
+        padding: 8px 0;
+    }
+
+    .hero {
+        padding: 45px 15px;
+    }
+
+    .hero h1 {
+        font-size: 32px;
+    }
+
+    .page-container {
+        padding: 25px 15px;
+    }
+
+    .container {
+        padding: 20px 12px;
+    }
+
+    .profile-header {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 15px;
+    }
+
+    .card {
+        padding: 18px;
+    }
+
+    .profile-item strong {
+        display: block;
+
+        margin-bottom: 4px;
+    }
+
+    .preference {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 8px;
+    }
+
+    .filters {
+        grid-template-columns: 1fr;
+    }
+
+    .engagement {
+        flex-direction: column;
+
+        gap: 10px;
+    }
+}
+
+
+/* =========================================================
+   21. SMALL MOBILE DEVICES
+   ========================================================= */
+
+@media (max-width: 480px) {
+
+    .navbar-container {
+        padding: 0 14px;
+    }
+
+    .hero h1 {
+        font-size: 28px;
+    }
+
+    .button {
+        width: 100%;
+
+        text-align: center;
+    }
+
+    .post-actions {
+        flex-direction: column;
+    }
+}
+
+
+
+/* ==========================================================
+   Phase 16: Admin Dashboard
+   ========================================================== */
+
+.admin-page {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.admin-header {
+    margin-bottom: 20px;
+}
+
+.admin-header h1 {
+    margin: 10px 0 8px;
+}
+
+.admin-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.admin-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-card-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+}
+
+.admin-card h2 {
+    margin-bottom: 10px;
+}
+
+.admin-card-description {
+    color: var(--secondary-text);
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.admin-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: auto;
+}
+
+.admin-info {
+    margin-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.admin-info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.admin-info-item:last-child {
+    border-bottom: none;
+}
+
+.admin-info-label {
+    color: var(--secondary-text);
+    font-size: 14px;
+}
+
+.admin-quick-actions {
+    margin-top: 25px;
+}
+
+.quick-action-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.quick-action {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 15px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background-color: var(--card-background);
+    color: var(--text);
+    text-decoration: none;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.quick-action:hover {
+    background-color: var(--status-background);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.quick-action-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.quick-action strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.quick-action small {
+    display: block;
+    color: var(--secondary-text);
+    line-height: 1.4;
+}
+
+.admin-notice {
+    margin-top: 25px;
+    padding: 18px 20px;
+    border-left: 4px solid var(--primary);
+    border-radius: 6px;
+    background-color: var(--status-background);
+}
+
+.admin-notice strong {
+    display: block;
+    margin-bottom: 6px;
+}
+
+.admin-notice p {
+    margin: 0;
+    color: var(--secondary-text);
+    line-height: 1.6;
+}
+
+
+/* ==========================================================
+   Admin Dashboard Responsive Design
+   ========================================================== */
+
+@media (max-width: 768px) {
+
+    .admin-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .quick-action-list {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-info-item {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .admin-card-actions {
+        flex-direction: column;
+    }
+
+    .admin-card-actions .button {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+
+@media (max-width: 600px) {
+
+    .admin-page {
+        width: 100%;
+    }
+
+    .admin-header {
+        padding: 18px;
+    }
+
+    .admin-card {
+        padding: 18px;
+    }
+
+    .admin-card-icon {
+        font-size: 28px;
+    }
+
+    .admin-quick-actions {
+        padding: 18px;
+    }
+
+    .quick-action {
+        padding: 13px;
+    }
+
+    .admin-notice {
+        padding: 15px;
+    }
+
+}

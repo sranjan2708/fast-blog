@@ -1,46 +1,105 @@
 {% extends "base.html" %}
 
+{% block title %}
+Login - Fast Blog
+{% endblock %}
+
 {% block content %}
 
-<h1>Login</h1>
+<div class="form-container">
 
-{% if message %}
-    <p>{{ message }}</p>
-{% endif %}
+    <div class="card">
 
-<form method="POST" action="/login">
+        <h1 class="page-title">
+            Login
+        </h1>
 
-    <div>
-        <label for="email">Email</label>
+        <p class="page-subtitle">
+            Sign in to your Fast Blog account.
+        </p>
 
-        <input
-            type="email"
-            id="email"
-            name="email"
-            value="{{ email or '' }}"
-            required
+
+        {% if message %}
+
+            <div class="message message-error">
+
+                {{ message }}
+
+            </div>
+
+        {% endif %}
+
+
+        <form
+            method="POST"
+            action="/login"
         >
+
+            <!-- Email -->
+
+            <div class="form-group">
+
+                <label for="email">
+                    Email
+                </label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value="{{ email or '' }}"
+                    placeholder="Enter your email"
+                    autocomplete="email"
+                    required
+                >
+
+            </div>
+
+
+            <!-- Password -->
+
+            <div class="form-group">
+
+                <label for="password">
+                    Password
+                </label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    autocomplete="current-password"
+                    required
+                >
+
+            </div>
+
+
+            <!-- Submit -->
+
+            <button
+                type="submit"
+                class="button"
+            >
+                Login
+            </button>
+
+        </form>
+
+
+        <p>
+
+            Don't have an account?
+
+            <a href="/register">
+                Create an account
+            </a>
+
+        </p>
+
     </div>
 
-    <br>
-
-    <div>
-        <label for="password">Password</label>
-
-        <input
-            type="password"
-            id="password"
-            name="password"
-            required
-        >
-    </div>
-
-    <br>
-
-    <button type="submit">
-        Login
-    </button>
-
-</form>
+</div>
 
 {% endblock %}

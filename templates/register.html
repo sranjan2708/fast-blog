@@ -1,46 +1,138 @@
 {% extends "base.html" %}
 
+{% block title %}
+Register - Fast Blog
+{% endblock %}
+
 {% block content %}
 
-<h1>Create an Account</h1>
+<div class="form-container">
 
-{% if message %}
-    <p>{{ message }}</p>
-{% endif %}
+    <div class="card">
 
-<form method="post" action="/register">
+        <h1 class="page-title">
+            Create an Account
+        </h1>
 
-    <label for="username">Username:</label>
-    <input
-        type="text"
-        id="username"
-        name="username"
-        value="{{ username }}"
-    >
+        <p class="page-subtitle">
+            Join Fast Blog and start sharing your ideas.
+        </p>
 
-    <br><br>
 
-    <label for="email">Email:</label>
-    <input
-        type="email"
-        id="email"
-        name="email"
-        value="{{ email }}"
-    >
+        {% if message %}
 
-    <br><br>
+            <div class="message message-error">
 
-    <label for="password">Password:</label>
-    <input
-        type="password"
-        id="password"
-        name="password"
-    >
+                {{ message }}
 
-    <br><br>
+            </div>
 
-    <button type="submit">Register</button>
+        {% endif %}
 
-</form>
+
+        <form
+            method="POST"
+            action="/register"
+        >
+
+            <!-- Username -->
+
+            <div class="form-group">
+
+                <label for="username">
+                    Username
+                </label>
+
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    value="{{ username or '' }}"
+                    placeholder="Enter your username"
+                    minlength="3"
+                    maxlength="50"
+                    autocomplete="username"
+                    required
+                >
+
+                <span class="form-help">
+                    Username must be between 3 and 50 characters.
+                </span>
+
+            </div>
+
+
+            <!-- Email -->
+
+            <div class="form-group">
+
+                <label for="email">
+                    Email
+                </label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value="{{ email or '' }}"
+                    placeholder="Enter your email"
+                    autocomplete="email"
+                    required
+                >
+
+            </div>
+
+
+            <!-- Password -->
+
+            <div class="form-group">
+
+                <label for="password">
+                    Password
+                </label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Create a password"
+                    minlength="8"
+                    maxlength="128"
+                    autocomplete="new-password"
+                    required
+                >
+
+                <span class="form-help">
+                    Password must be between 8 and 128 characters.
+                </span>
+
+            </div>
+
+
+            <!-- Submit -->
+
+            <button
+                type="submit"
+                class="button"
+            >
+                Register
+            </button>
+
+        </form>
+
+
+        <p>
+
+            Already have an account?
+
+            <a href="/login">
+                Login
+            </a>
+
+        </p>
+
+    </div>
+
+</div>
 
 {% endblock %}

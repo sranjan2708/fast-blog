@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from fastapi import FastAPI, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy.exc import IntegrityError
@@ -28,6 +29,9 @@ from utils import generate_unique_slug
 
 app = FastAPI()
 
+# Phase 16: Serve frontend static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 templates = Jinja2Templates(directory="templates")
 
 
@@ -42,14 +46,29 @@ def get_post_form_options(db: Session):
 # ==========================================================
 
 @app.get("/")
-def home(request: Request):
+def home(
+    request: Request,
+    db: Session = Depends(get_db)
+):
     username = "Sudhansu"
+
+    current_user = None
+    session_id = request.cookies.get("session_id")
+
+    if session_id:
+        current_user = db.query(User).join(
+            UserSession,
+            User.id == UserSession.user_id
+        ).filter(
+            UserSession.session_id == session_id
+        ).first()
 
     return templates.TemplateResponse(
         request=request,
         name="index.html",
         context={
-            "username": username
+            "username": username,
+            "user": current_user
         }
     )
 
@@ -247,7 +266,8 @@ def login_user(
         name="login.html",
         context={
             "message": "Login successful!",
-            "email": email
+            "email": email,
+            "user": user
         }
     )
 
@@ -452,15 +472,24 @@ def edit_profile(
 # Admin
 # ==========================================================
 
-@app.get("/admin")
+@app.get("/admin", response_class=HTMLResponse)
 def admin_dashboard(
+    request: Request,
     user: User = Depends(require_admin)
 ):
-    return {
-        "message": "Welcome to the admin area.",
-        "username": user.username,
-        "role": user.role
-    }
+    # Phase 16: Render the administrator dashboard.
+    # The existing require_admin dependency is preserved so
+    # only authenticated administrators can access this page.
+    return templates.TemplateResponse(
+        request=request,
+        name="admin.html",
+        context={
+            "message": "Welcome to the admin area.",
+            "username": user.username,
+            "role": user.role,
+            "user": user
+        }
+    )
 
 
 # ==========================================================
@@ -492,7 +521,8 @@ def create_post_page(
         context={
             "message": None,
             "categories": categories,
-            "tags": tags
+            "tags": tags,
+            "user": user
         }
     )
 
@@ -808,7 +838,8 @@ def post_list(
             "categories": categories,
             "tags": tags,
             "category_id": category_id,
-            "tag_id": tag_id
+            "tag_id": tag_id,
+            "user": current_user
         }
     )
 
@@ -835,7 +866,8 @@ def edit_post_page(
             context={
                 "post": None,
                 "message": "Post not found.",
-                "current_user": user
+                "current_user": user,
+                "user": user
             },
             status_code=404
         )
@@ -847,7 +879,8 @@ def edit_post_page(
             context={
                 "post": post,
                 "message": "You are not allowed to edit this post.",
-                "current_user": user
+                "current_user": user,
+                "user": user
             },
             status_code=403
         )
@@ -861,7 +894,8 @@ def edit_post_page(
             "post": post,
             "message": None,
             "categories": categories,
-            "tags": tags
+            "tags": tags,
+            "user": user
         }
     )
 
@@ -893,7 +927,8 @@ def edit_post(
             context={
                 "post": None,
                 "message": "Post not found.",
-                "current_user": user
+                "current_user": user,
+                "user": user
             },
             status_code=404
         )
@@ -905,7 +940,8 @@ def edit_post(
             context={
                 "post": post,
                 "message": "You are not allowed to edit this post.",
-                "current_user": user
+                "current_user": user,
+                "user": user
             },
             status_code=403
         )
@@ -1043,6 +1079,7 @@ def post_detail(
                 "post": None,
                 "message": "Post not found.",
                 "current_user": user,
+                "user": user,
                 "comments": []
             },
             status_code=404
@@ -1119,6 +1156,7 @@ def post_detail(
             "post": post,
             "comments": comments,
             "current_user": user,
+                "user": user,
             "liked": liked,
             "like_count": like_count
         }
@@ -1278,7 +1316,8 @@ def create_comment(
                 "post": None,
                 "comments": [],
                 "message": "Post not found.",
-                "current_user": user
+                "current_user": user,
+                "user": user
             },
             status_code=404
         )
@@ -1306,7 +1345,8 @@ def create_comment(
                 "post": post,
                 "comments": comments,
                 "message": "Comment cannot be empty.",
-                "current_user": user
+                "current_user": user,
+                "user": user
             },
             status_code=400
         )
@@ -1373,7 +1413,8 @@ def edit_comment_page(
                 "post": None,
                 "comments": [],
                 "message": "Comment not found.",
-                "current_user": user
+                "current_user": user,
+                "user": user
             },
             status_code=404
         )
@@ -1395,7 +1436,8 @@ def edit_comment_page(
                     "post": None,
                     "comments": [],
                     "message": "Post not found.",
-                    "current_user": user
+                    "current_user": user,
+                "user": user
                 },
                 status_code=404
             )
@@ -1425,7 +1467,8 @@ def edit_comment_page(
                     "post": None,
                     "comments": [],
                     "message": "Post not found.",
-                    "current_user": user
+                    "current_user": user,
+                "user": user
                 },
                 status_code=404
             )
@@ -1446,7 +1489,8 @@ def edit_comment_page(
                 "post": post,
                 "comments": comments,
                 "message": "You are not allowed to edit this comment.",
-                "current_user": user
+                "current_user": user,
+                "user": user
             },
             status_code=403
         )
@@ -1469,7 +1513,8 @@ def edit_comment_page(
                 "post": None,
                 "comments": [],
                 "message": "Post not found.",
-                "current_user": user
+                "current_user": user,
+                "user": user
             },
             status_code=404
         )
@@ -1490,7 +1535,8 @@ def edit_comment_page(
             "post": post,
             "comments": comments,
             "edit_comment": comment,
-            "current_user": user
+            "current_user": user,
+                "user": user
         }
     )
 
@@ -1526,7 +1572,8 @@ def edit_comment(
                 "post": None,
                 "comments": [],
                 "message": "Comment not found.",
-                "current_user": user
+                "current_user": user,
+                "user": user
             },
             status_code=404
         )
@@ -1548,7 +1595,8 @@ def edit_comment(
                     "post": None,
                     "comments": [],
                     "message": "Post not found.",
-                    "current_user": user
+                    "current_user": user,
+                "user": user
                 },
                 status_code=404
             )
@@ -1575,7 +1623,8 @@ def edit_comment(
                     "post": None,
                     "comments": [],
                     "message": "Post not found.",
-                    "current_user": user
+                    "current_user": user,
+                "user": user
                 },
                 status_code=404
             )
@@ -1596,7 +1645,8 @@ def edit_comment(
                 "post": post,
                 "comments": comments,
                 "message": "You are not allowed to edit this comment.",
-                "current_user": user
+                "current_user": user,
+                "user": user
             },
             status_code=403
         )
@@ -1631,7 +1681,8 @@ def edit_comment(
                 "comments": comments,
                 "edit_comment": comment,
                 "message": "Comment cannot be empty.",
-                "current_user": user
+                "current_user": user,
+                "user": user
             },
             status_code=400
         )

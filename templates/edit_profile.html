@@ -1,113 +1,175 @@
-<!DOCTYPE html>
-<html>
+{% extends "base.html" %}
 
-<head>
-    <title>Edit Profile</title>
-</head>
+{% block title %}
+Edit Profile - Fast Blog
+{% endblock %}
 
-<body>
+{% block content %}
 
-    <h1>Edit Profile</h1>
+<div class="form-container">
 
-    {% if message %}
-        <p>{{ message }}</p>
-    {% endif %}
+    <div class="card">
 
-    <form method="post" action="/profile/edit">
+        <h1 class="page-title">
+            Edit Profile
+        </h1>
 
-        <div>
-            <label for="username">
-                Username
-            </label>
+        <p class="page-subtitle">
+            Update your profile information and preferences.
+        </p>
 
-            <input
-                type="text"
-                id="username"
-                name="username"
-                value="{{ user.username }}"
-                required
-                minlength="3"
-                maxlength="50"
-            >
-        </div>
 
-        <br>
+        {% if message %}
 
-        <div>
-            <label for="bio">
-                Bio
-            </label>
+            <div class="message message-error">
 
-            <br>
+                {{ message }}
 
-            <textarea
-                id="bio"
-                name="bio"
-                rows="5"
-                maxlength="500"
-            >{{ user.bio or "" }}</textarea>
-        </div>
+            </div>
 
-        <br>
+        {% endif %}
 
-        <div>
-            <label for="theme">
-                Theme
-            </label>
 
-            <select
-                id="theme"
-                name="theme"
-                required
-            >
-                <option
-                    value="light"
-                    {% if user.theme == "light" %}selected{% endif %}
+        <form
+            method="POST"
+            action="/profile/edit"
+        >
+
+            <!-- Username -->
+
+            <div class="form-group">
+
+                <label for="username">
+                    Username
+                </label>
+
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    value="{{ user.username }}"
+                    minlength="3"
+                    maxlength="50"
+                    autocomplete="username"
+                    required
                 >
-                    Light
-                </option>
 
-                <option
-                    value="dark"
-                    {% if user.theme == "dark" %}selected{% endif %}
+                <span class="form-help">
+                    Username must be between 3 and 50 characters.
+                </span>
+
+            </div>
+
+
+            <!-- Bio -->
+
+            <div class="form-group">
+
+                <label for="bio">
+                    Bio
+                </label>
+
+                <textarea
+                    id="bio"
+                    name="bio"
+                    rows="5"
+                    maxlength="500"
+                    placeholder="Tell readers a little about yourself..."
+                >{{ user.bio or "" }}</textarea>
+
+                <span class="form-help">
+                    Maximum 500 characters.
+                </span>
+
+            </div>
+
+
+            <!-- Theme -->
+
+            <div class="form-group">
+
+                <label for="theme">
+                    Theme
+                </label>
+
+                <select
+                    id="theme"
+                    name="theme"
+                    required
                 >
-                    Dark
-                </option>
-            </select>
-        </div>
 
-        <br>
+                    <option
+                        value="light"
+                        {% if user.theme == "light" %}
+                            selected
+                        {% endif %}
+                    >
+                        Light
+                    </option>
 
-        <div>
-            <label for="posts_per_page">
-                Posts per page
-            </label>
+                    <option
+                        value="dark"
+                        {% if user.theme == "dark" %}
+                            selected
+                        {% endif %}
+                    >
+                        Dark
+                    </option>
 
-            <input
-                type="number"
-                id="posts_per_page"
-                name="posts_per_page"
-                value="{{ user.posts_per_page }}"
-                min="5"
-                max="50"
-                required
-            >
-        </div>
+                </select>
 
-        <br>
+            </div>
 
-        <button type="submit">
-            Update Profile
-        </button>
 
-    </form>
+            <!-- Posts Per Page -->
 
-    <br>
+            <div class="form-group">
 
-    <a href="/profile">
-        Cancel
-    </a>
+                <label for="posts_per_page">
+                    Posts per page
+                </label>
 
-</body>
+                <input
+                    type="number"
+                    id="posts_per_page"
+                    name="posts_per_page"
+                    value="{{ user.posts_per_page }}"
+                    min="5"
+                    max="50"
+                    required
+                >
 
-</html>
+                <span class="form-help">
+                    Choose between 5 and 50 posts per page.
+                </span>
+
+            </div>
+
+
+            <!-- Actions -->
+
+            <div class="post-actions">
+
+                <button
+                    type="submit"
+                    class="button"
+                >
+                    Update Profile
+                </button>
+
+                <a
+                    href="/profile"
+                    class="button button-secondary"
+                >
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

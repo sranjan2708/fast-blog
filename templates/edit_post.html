@@ -1,137 +1,232 @@
 {% extends "base.html" %}
 
+{% block title %}
+Edit Post - Fast Blog
+{% endblock %}
+
 {% block content %}
 
-<h1>Edit Post</h1>
+<div class="form-container">
 
-{% if message %}
-    <p>{{ message }}</p>
-{% endif %}
+    <div class="card">
 
-<form method="POST" action="/posts/{{ post.id }}/edit">
+        <h1 class="page-title">
+            Edit Post
+        </h1>
 
-    <div>
+        <p class="page-subtitle">
+            Update your post and save your changes.
+        </p>
 
-        <label for="title">Title</label>
 
-        <input
-            type="text"
-            id="title"
-            name="title"
-            value="{{ post.title }}"
-            maxlength="200"
-            required
+        {% if message %}
+
+            <div class="message message-error">
+                {{ message }}
+            </div>
+
+        {% endif %}
+
+
+        <form
+            method="POST"
+            action="/posts/{{ post.id }}/edit"
         >
 
-    </div>
+            <!-- =================================================
+                 TITLE
+                 ================================================= -->
 
-    <br>
+            <div class="form-group">
 
-    <div>
+                <label for="title">
+                    Title
+                </label>
 
-        <label for="content">Content</label>
-
-        <textarea
-            id="content"
-            name="content"
-            maxlength="5000"
-            required
-        >{{ post.content }}</textarea>
-
-    </div>
-
-    <br>
-
-    <div>
-
-        <label for="status">Status</label>
-
-        <select id="status" name="status">
-
-            <option
-                value="draft"
-                {% if post.status == "draft" %}selected{% endif %}
-            >
-                Draft
-            </option>
-
-            <option
-                value="published"
-                {% if post.status == "published" %}selected{% endif %}
-            >
-                Published
-            </option>
-
-        </select>
-
-    </div>
-
-    <br>
-
-    <div>
-
-        <label for="categories">Categories</label>
-
-        <select
-            id="categories"
-            name="category_ids"
-            multiple
-        >
-
-            {% for category in categories %}
-
-                <option
-                    value="{{ category.id }}"
-                    {% if category in post.categories %}selected{% endif %}
+                <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value="{{ post.title }}"
+                    maxlength="200"
+                    placeholder="Enter your post title"
+                    required
                 >
-                    {{ category.name }}
-                </option>
 
-            {% endfor %}
+                <span class="form-help">
+                    Maximum 200 characters.
+                </span>
 
-        </select>
+            </div>
 
-    </div>
 
-    <br>
+            <!-- =================================================
+                 CONTENT
+                 ================================================= -->
 
-    <div>
+            <div class="form-group">
 
-        <label for="tags">Tags</label>
+                <label for="content">
+                    Content
+                </label>
 
-        <select
-            id="tags"
-            name="tag_ids"
-            multiple
-        >
+                <textarea
+                    id="content"
+                    name="content"
+                    maxlength="5000"
+                    placeholder="Write your post content here..."
+                    required
+                >{{ post.content }}</textarea>
 
-            {% for tag in tags %}
+                <span class="form-help">
+                    Maximum 5000 characters.
+                </span>
 
-                <option
-                    value="{{ tag.id }}"
-                    {% if tag in post.tags %}selected{% endif %}
+            </div>
+
+
+            <!-- =================================================
+                 STATUS
+                 ================================================= -->
+
+            <div class="form-group">
+
+                <label for="status">
+                    Status
+                </label>
+
+                <select
+                    id="status"
+                    name="status"
+                    required
                 >
-                    {{ tag.name }}
-                </option>
 
-            {% endfor %}
+                    <option
+                        value="draft"
+                        {% if post.status == "draft" %}
+                            selected
+                        {% endif %}
+                    >
+                        Draft
+                    </option>
 
-        </select>
+                    <option
+                        value="published"
+                        {% if post.status == "published" %}
+                            selected
+                        {% endif %}
+                    >
+                        Published
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- =================================================
+                 CATEGORIES
+                 ================================================= -->
+
+            <div class="form-group">
+
+                <label for="categories">
+                    Categories
+                </label>
+
+                <select
+                    id="categories"
+                    name="category_ids"
+                    multiple
+                >
+
+                    {% for category in categories %}
+
+                        <option
+                            value="{{ category.id }}"
+                            {% if category in post.categories %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ category.name }}
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+                <span class="form-help">
+                    Hold Ctrl (Windows/Linux) or Command (Mac)
+                    to select multiple categories.
+                </span>
+
+            </div>
+
+
+            <!-- =================================================
+                 TAGS
+                 ================================================= -->
+
+            <div class="form-group">
+
+                <label for="tags">
+                    Tags
+                </label>
+
+                <select
+                    id="tags"
+                    name="tag_ids"
+                    multiple
+                >
+
+                    {% for tag in tags %}
+
+                        <option
+                            value="{{ tag.id }}"
+                            {% if tag in post.tags %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ tag.name }}
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+                <span class="form-help">
+                    Select one or more tags for your post.
+                </span>
+
+            </div>
+
+
+            <!-- =================================================
+                 ACTIONS
+                 ================================================= -->
+
+            <div class="post-actions">
+
+                <button
+                    type="submit"
+                    class="button"
+                >
+                    Update Post
+                </button>
+
+                <a
+                    href="/posts/{{ post.slug }}"
+                    class="button button-secondary"
+                >
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
 
     </div>
 
-    <br>
-
-    <button type="submit">
-        Update Post
-    </button>
-
-</form>
-
-<br>
-
-<a href="/posts/{{ post.slug }}">
-    Cancel
-</a>
+</div>
 
 {% endblock %}
