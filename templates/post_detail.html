@@ -386,7 +386,7 @@
 
                     {% if current_user.id == comment.user_id %}
 
-                    <a href="/posts/{{ post.slug }}?edit_comment={{ comment.id }}"
+                    <a href="/comments/{{ comment.id }}/edit"
                        class="btn btn-small btn-secondary">
                         Edit
                     </a>

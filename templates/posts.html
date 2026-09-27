@@ -437,7 +437,7 @@ Posts - Fast Blog
                 {% if page > 1 %}
 
                     <a
-                        href="/posts?search={{ search }}&status={{ status }}&sort={{ sort }}&category_id={{ category_id or '' }}&tag_id={{ tag_id or '' }}&page={{ page - 1 }}"
+                        href="{{ request.url.include_query_params(page=page - 1) }}"
                         class="button button-secondary"
                     >
                         ← Previous
@@ -459,7 +459,7 @@ Posts - Fast Blog
                 {% if page < total_pages %}
 
                     <a
-                        href="/posts?search={{ search }}&status={{ status }}&sort={{ sort }}&category_id={{ category_id or '' }}&tag_id={{ tag_id or '' }}&page={{ page + 1 }}"
+                        href="{{ request.url.include_query_params(page=page + 1) }}"
                         class="button button-secondary"
                     >
                         Next →

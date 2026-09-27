@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
+from datetime import datetime
+
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -23,6 +25,12 @@ class Comment(Base):
         Integer,
         ForeignKey("posts.id"),
         nullable=False
+    )
+
+    created_at = Column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow
     )
 
     is_deleted = Column(

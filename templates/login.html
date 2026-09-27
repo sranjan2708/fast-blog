@@ -21,7 +21,7 @@ Login - Fast Blog
 
         {% if message %}
 
-            <div class="message message-error">
+            <div class="message message-{{ message_type | default('error') }}">
 
                 {{ message }}
 

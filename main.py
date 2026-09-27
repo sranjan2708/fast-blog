@@ -84,6 +84,7 @@ def register_page(request: Request):
         name="register.html",
         context={
             "message": None,
+            "message_type": None,
             "username": "",
             "email": ""
         }
@@ -133,6 +134,7 @@ def register_user(
             name="register.html",
             context={
                 "message": message,
+                "message_type": "error",
                 "username": username,
                 "email": email
             }
@@ -148,6 +150,7 @@ def register_user(
             name="register.html",
             context={
                 "message": "Username already exists",
+                "message_type": "error",
                 "username": username,
                 "email": email
             }
@@ -163,6 +166,7 @@ def register_user(
             name="register.html",
             context={
                 "message": "Email already exists",
+                "message_type": "error",
                 "username": username,
                 "email": email
             }
@@ -190,6 +194,7 @@ def register_user(
             name="register.html",
             context={
                 "message": "Unable to register user. Username or email may already exist.",
+                "message_type": "error",
                 "username": username,
                 "email": email
             }
@@ -200,6 +205,7 @@ def register_user(
         name="register.html",
         context={
             "message": "User registered successfully",
+            "message_type": "success",
             "username": "",
             "email": ""
         }
@@ -236,6 +242,7 @@ def login_user(
             name="login.html",
             context={
                 "message": "Invalid email or password.",
+                "message_type": "error",
                 "email": email
             }
         )
@@ -246,6 +253,7 @@ def login_user(
             name="login.html",
             context={
                 "message": "Invalid email or password.",
+                "message_type": "error",
                 "email": email
             }
         )
@@ -266,6 +274,7 @@ def login_user(
         name="login.html",
         context={
             "message": "Login successful!",
+            "message_type": "success",
             "email": email,
             "user": user
         }
@@ -559,7 +568,8 @@ def create_post(
             context={
                 "message": "Please enter valid post details.",
                 "categories": categories,
-                "tags": tags
+                "tags": tags,
+                "user": user
             }
         )
 
@@ -579,7 +589,8 @@ def create_post(
                 context={
                     "message": f"Category with ID {category_id} not found.",
                     "categories": categories,
-                    "tags": tags
+                    "tags": tags,
+                    "user": user
                 }
             )
 
@@ -601,7 +612,8 @@ def create_post(
                 context={
                     "message": f"Tag with ID {tag_id} not found.",
                     "categories": categories,
-                    "tags": tags
+                    "tags": tags,
+                    "user": user
                 }
             )
 
@@ -644,8 +656,8 @@ def post_list(
     status: str = "",
     sort: str = "newest",
     page: int = 1,
-    category_id: int | None = None,
-    tag_id: int | None = None,
+    category_id: str | None = None,
+    tag_id: str | None = None,
     db: Session = Depends(get_db)
 ):
 
@@ -672,6 +684,38 @@ def post_list(
     # Prevent invalid page numbers
     if page < 1:
         page = 1
+
+    # ------------------------------------------------------
+    # Normalize optional filter values
+    # ------------------------------------------------------
+    # HTML forms submit an empty string when "All Categories"
+    # or "All Tags" is selected. Convert empty strings to None
+    # so the filters are treated as not selected.
+    #
+    # If a non-empty value cannot be converted to an integer,
+    # use -1 so the existing invalid-ID behavior returns no posts.
+
+    if category_id is not None:
+        category_id = category_id.strip()
+
+        if category_id == "":
+            category_id = None
+        else:
+            try:
+                category_id = int(category_id)
+            except ValueError:
+                category_id = -1
+
+    if tag_id is not None:
+        tag_id = tag_id.strip()
+
+        if tag_id == "":
+            tag_id = None
+        else:
+            try:
+                tag_id = int(tag_id)
+            except ValueError:
+                tag_id = -1
 
     # ------------------------------------------------------
     # Start with all posts
@@ -971,7 +1015,8 @@ def edit_post(
                 "post": post,
                 "message": "Please enter valid post details.",
                 "categories": categories,
-                "tags": tags
+                "tags": tags,
+                "user": user
             }
         )
 
@@ -999,7 +1044,8 @@ def edit_post(
                     "post": post,
                     "message": f"Category with ID {category_id} not found.",
                     "categories": categories,
-                    "tags": tags
+                    "tags": tags,
+                    "user": user
                 }
             )
 
@@ -1029,7 +1075,8 @@ def edit_post(
                     "post": post,
                     "message": f"Tag with ID {tag_id} not found.",
                     "categories": categories,
-                    "tags": tags
+                    "tags": tags,
+                    "user": user
                 }
             )
 
@@ -1889,6 +1936,49 @@ def delete_post(
             url=f"/posts/{post.slug}",
             status_code=303
         )
+
+    # ------------------------------------------------------
+    # Delete related post views first
+    # ------------------------------------------------------
+    # PostView.post_id references posts.id, so these records
+    # must be removed before deleting the parent post.
+
+    db.query(PostView).filter(
+        PostView.post_id == post.id
+    ).delete(
+        synchronize_session=False
+    )
+
+    # ------------------------------------------------------
+    # Delete related likes
+    # ------------------------------------------------------
+
+    db.query(Like).filter(
+        Like.post_id == post.id
+    ).delete(
+        synchronize_session=False
+    )
+
+    # ------------------------------------------------------
+    # Delete related comments
+    # ------------------------------------------------------
+
+    db.query(Comment).filter(
+        Comment.post_id == post.id
+    ).delete(
+        synchronize_session=False
+    )
+
+    # ------------------------------------------------------
+    # Remove many-to-many category/tag associations
+    # ------------------------------------------------------
+
+    post.categories = []
+    post.tags = []
+
+    # ------------------------------------------------------
+    # Delete the post itself
+    # ------------------------------------------------------
 
     db.delete(post)
     db.commit()
