@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta
+import logging
 
 from fastapi import FastAPI, Request, Form, Depends
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -33,6 +36,159 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
+
+# ==========================================================
+# PHASE 17: GLOBAL ERROR HANDLING
+# ==========================================================
+
+# Keep detailed exception information in the server logs,
+# but never expose internal exception details to users.
+logger = logging.getLogger(__name__)
+
+
+def rollback_integrity_error(db: Session, operation: str):
+    """
+    Roll back a failed database transaction and log the internal error.
+    The actual database exception is never shown to the user.
+    """
+    db.rollback()
+    logger.exception("Database integrity error during %s", operation)
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(
+    request: Request,
+    exc: StarletteHTTPException
+):
+    """
+    Handle HTTP errors consistently across the application.
+
+    404 -> custom Not Found page
+    403 -> custom Access Denied page
+    Other known HTTP errors -> safe user-facing message
+    """
+
+    if exc.status_code == 404:
+        return templates.TemplateResponse(
+            request=request,
+            name="404.html",
+            context={},
+            status_code=404
+        )
+
+    if exc.status_code == 403:
+        return templates.TemplateResponse(
+            request=request,
+            name="403.html",
+            context={},
+            status_code=403
+        )
+
+    if exc.status_code == 401:
+        return HTMLResponse(
+            content="""
+            <div style="font-family: Arial, sans-serif; text-align: center; padding: 60px;">
+                <h1>401</h1>
+                <h2>Login Required</h2>
+                <p>Please log in to access this page.</p>
+                <a href="/login">Go to Login</a>
+            </div>
+            """,
+            status_code=401
+        )
+
+    if exc.status_code == 400:
+        return HTMLResponse(
+            content="""
+            <div style="font-family: Arial, sans-serif; text-align: center; padding: 60px;">
+                <h1>400</h1>
+                <h2>Invalid Request</h2>
+                <p>The request could not be processed.</p>
+                <a href="/">Back to Home</a>
+            </div>
+            """,
+            status_code=400
+        )
+
+    return HTMLResponse(
+        content="""
+        <div style="font-family: Arial, sans-serif; text-align: center; padding: 60px;">
+            <h1>Error</h1>
+            <h2>Something went wrong</h2>
+            <p>We could not process your request.</p>
+            <a href="/">Back to Home</a>
+        </div>
+        """,
+        status_code=exc.status_code
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_exception_handler(
+    request: Request,
+    exc: RequestValidationError
+):
+    """
+    Handle FastAPI validation errors without exposing Pydantic
+    or internal validation details to the user.
+
+    Invalid path parameters are treated as a missing resource,
+    so URLs such as /comments/abc/edit receive a 404 page.
+    Other malformed requests receive a safe 400 response.
+    """
+
+    has_path_error = any(
+        error.get("loc", [None])[0] == "path"
+        for error in exc.errors()
+    )
+
+    if has_path_error:
+        return templates.TemplateResponse(
+            request=request,
+            name="404.html",
+            context={},
+            status_code=404
+        )
+
+    return HTMLResponse(
+        content="""
+        <div style="font-family: Arial, sans-serif; text-align: center; padding: 60px;">
+            <h1>400</h1>
+            <h2>Invalid Request</h2>
+            <p>Please check the information you submitted and try again.</p>
+            <a href="/">Back to Home</a>
+        </div>
+        """,
+        status_code=400
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(
+    request: Request,
+    exc: Exception
+):
+    """
+    Catch unexpected server errors.
+
+    The full exception is logged on the server for debugging,
+    but the user only receives a safe generic 500 page.
+    """
+
+    logger.exception(
+        "Unhandled exception while processing %s %s",
+        request.method,
+        request.url.path,
+        exc_info=(type(exc), exc, exc.__traceback__)
+    )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="500.html",
+        context={},
+        status_code=500
+    )
+
 
 
 def get_post_form_options(db: Session):
@@ -267,7 +423,21 @@ def login_user(
     )
 
     db.add(new_session)
-    db.commit()
+
+    try:
+        db.commit()
+    except IntegrityError:
+        rollback_integrity_error(db, "login session creation")
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={
+                "message": "Unable to complete login. Please try again.",
+                "message_type": "error",
+                "email": email
+            },
+            status_code=400
+        )
 
     response = templates.TemplateResponse(
         request=request,
@@ -636,8 +806,24 @@ def create_post(
     new_post.tags = tags
 
     db.add(new_post)
-    db.commit()
-    db.refresh(new_post)
+
+    try:
+        db.commit()
+        db.refresh(new_post)
+    except IntegrityError:
+        rollback_integrity_error(db, "post creation")
+        categories, tags = get_post_form_options(db)
+        return templates.TemplateResponse(
+            request=request,
+            name="create_post.html",
+            context={
+                "message": "Unable to create the post. Please try again.",
+                "categories": categories,
+                "tags": tags,
+                "user": user
+            },
+            status_code=400
+        )
 
     return RedirectResponse(
         url=f"/posts/{new_post.slug}",
@@ -1090,8 +1276,24 @@ def edit_post(
     post.tags = tags
 
     # Keep the existing slug unchanged
-    db.commit()
-    db.refresh(post)
+    try:
+        db.commit()
+        db.refresh(post)
+    except IntegrityError:
+        rollback_integrity_error(db, "post update")
+        categories, tags = get_post_form_options(db)
+        return templates.TemplateResponse(
+            request=request,
+            name="edit_post.html",
+            context={
+                "post": post,
+                "message": "Unable to update the post. Please try again.",
+                "categories": categories,
+                "tags": tags,
+                "user": user
+            },
+            status_code=400
+        )
 
     return RedirectResponse(
         url=f"/posts/{post.slug}",
@@ -1320,7 +1522,10 @@ def unlike_post(
 
     if existing_like:
         db.delete(existing_like)
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            rollback_integrity_error(db, "unlike operation")
 
     # ------------------------------------------------------
     # Redirect back to the post
@@ -1417,8 +1622,32 @@ def create_comment(
     )
 
     db.add(new_comment)
-    db.commit()
-    db.refresh(new_comment)
+    try:
+        db.commit()
+        db.refresh(new_comment)
+    except IntegrityError:
+        rollback_integrity_error(db, "comment creation")
+        comments = db.query(Comment).options(
+            joinedload(Comment.user)
+        ).filter(
+            Comment.post_id == post.id,
+            Comment.is_deleted == False
+        ).order_by(
+            Comment.id.desc()
+        ).all()
+
+        return templates.TemplateResponse(
+            request=request,
+            name="post_detail.html",
+            context={
+                "post": post,
+                "comments": comments,
+                "message": "Unable to add your comment. Please try again.",
+                "current_user": user,
+                "user": user
+            },
+            status_code=400
+        )
 
     # ------------------------------------------------------
     # Redirect back to the post
@@ -1740,8 +1969,24 @@ def edit_comment(
 
     comment.content = content
 
-    db.commit()
-    db.refresh(comment)
+    try:
+        db.commit()
+        db.refresh(comment)
+    except IntegrityError:
+        rollback_integrity_error(db, "comment update")
+        return templates.TemplateResponse(
+            request=request,
+            name="post_detail.html",
+            context={
+                "post": post,
+                "comments": comments,
+                "edit_comment": comment,
+                "message": "Unable to update your comment. Please try again.",
+                "current_user": user,
+                "user": user
+            },
+            status_code=400
+        )
 
     # ------------------------------------------------------
     # Find the post and redirect back to it
@@ -1831,7 +2076,14 @@ def delete_comment(
     post_id = comment.post_id
 
     comment.is_deleted = True
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        rollback_integrity_error(db, "comment deletion")
+        return RedirectResponse(
+            url="/posts",
+            status_code=303
+        )
 
     # ------------------------------------------------------
     # Redirect back to the post
@@ -1889,7 +2141,14 @@ def admin_delete_comment(
 
     if not comment.is_deleted:
         comment.is_deleted = True
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            rollback_integrity_error(db, "admin comment deletion")
+            return RedirectResponse(
+                url="/posts",
+                status_code=303
+            )
 
     # ------------------------------------------------------
     # Redirect back to the post
@@ -1981,7 +2240,15 @@ def delete_post(
     # ------------------------------------------------------
 
     db.delete(post)
-    db.commit()
+
+    try:
+        db.commit()
+    except IntegrityError:
+        rollback_integrity_error(db, "post deletion")
+        return RedirectResponse(
+            url="/posts",
+            status_code=303
+        )
 
     return RedirectResponse(
         url="/posts",
@@ -2007,7 +2274,10 @@ def logout(
 
         if user_session:
             db.delete(user_session)
-            db.commit()
+            try:
+                db.commit()
+            except IntegrityError:
+                rollback_integrity_error(db, "logout session deletion")
 
     response = RedirectResponse(
         url="/login",

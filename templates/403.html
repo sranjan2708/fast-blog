@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Access Denied - Fast Blog{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center">
+        <div class="mb-4">
+            <h1 class="display-1 fw-bold">403</h1>
+        </div>
+
+        <h2 class="mb-3">Access Denied</h2>
+
+        <p class="text-muted mb-4">
+            You don't have permission to access this page or perform this action.
+        </p>
+
+        <a href="/" class="btn btn-primary">
+            ← Back to Home
+        </a>
+    </div>
+</div>
+{% endblock %}
