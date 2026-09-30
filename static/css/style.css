@@ -1038,3 +1038,83 @@ select:focus {
     }
 
 }
+
+
+/* ==========================================================
+   22. EDIT POST PAGE
+   Scoped styles only - does not change global form styling
+   ========================================================== */
+
+.edit-post-container {
+    max-width: 760px;
+    margin: 30px auto;
+}
+
+.edit-post-card {
+    width: 100%;
+}
+
+.edit-post-card .page-title {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.edit-post-card .page-subtitle {
+    margin-top: 0;
+    margin-bottom: 25px;
+}
+
+.edit-post-form {
+    width: 100%;
+}
+
+.edit-post-form .form-group {
+    margin-bottom: 20px;
+}
+
+.edit-post-form textarea {
+    min-height: 220px;
+    line-height: 1.6;
+}
+
+.edit-post-form select[multiple] {
+    min-height: 140px;
+}
+
+.edit-post-actions {
+    margin-top: 25px;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+
+    .edit-post-container {
+        width: 100%;
+        margin: 20px auto;
+    }
+
+    .edit-post-card {
+        padding: 18px;
+    }
+
+    .edit-post-form textarea {
+        min-height: 190px;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .edit-post-container {
+        margin: 15px auto;
+    }
+
+    .edit-post-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .edit-post-actions .button {
+        width: 100%;
+        text-align: center;
+    }
+}

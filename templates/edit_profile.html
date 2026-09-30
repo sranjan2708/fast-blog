@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 
 {% block title %}
+
 Edit Profile - Fast Blog
+
 {% endblock %}
 
 {% block content %}
@@ -11,11 +13,15 @@ Edit Profile - Fast Blog
     <div class="card">
 
         <h1 class="page-title">
+
             Edit Profile
+
         </h1>
 
         <p class="page-subtitle">
+
             Update your profile information and preferences.
+
         </p>
 
 
@@ -35,12 +41,23 @@ Edit Profile - Fast Blog
             action="/profile/edit"
         >
 
+            <!-- CSRF Protection -->
+
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token(request) }}"
+            >
+
+
             <!-- Username -->
 
             <div class="form-group">
 
                 <label for="username">
+
                     Username
+
                 </label>
 
                 <input
@@ -55,7 +72,9 @@ Edit Profile - Fast Blog
                 >
 
                 <span class="form-help">
+
                     Username must be between 3 and 50 characters.
+
                 </span>
 
             </div>
@@ -66,7 +85,9 @@ Edit Profile - Fast Blog
             <div class="form-group">
 
                 <label for="bio">
+
                     Bio
+
                 </label>
 
                 <textarea
@@ -78,7 +99,9 @@ Edit Profile - Fast Blog
                 >{{ user.bio or "" }}</textarea>
 
                 <span class="form-help">
+
                     Maximum 500 characters.
+
                 </span>
 
             </div>
@@ -89,7 +112,9 @@ Edit Profile - Fast Blog
             <div class="form-group">
 
                 <label for="theme">
+
                     Theme
+
                 </label>
 
                 <select
@@ -104,7 +129,9 @@ Edit Profile - Fast Blog
                             selected
                         {% endif %}
                     >
+
                         Light
+
                     </option>
 
                     <option
@@ -113,7 +140,9 @@ Edit Profile - Fast Blog
                             selected
                         {% endif %}
                     >
+
                         Dark
+
                     </option>
 
                 </select>
@@ -126,7 +155,9 @@ Edit Profile - Fast Blog
             <div class="form-group">
 
                 <label for="posts_per_page">
+
                     Posts per page
+
                 </label>
 
                 <input
@@ -140,7 +171,9 @@ Edit Profile - Fast Blog
                 >
 
                 <span class="form-help">
+
                     Choose between 5 and 50 posts per page.
+
                 </span>
 
             </div>
@@ -154,14 +187,18 @@ Edit Profile - Fast Blog
                     type="submit"
                     class="button"
                 >
+
                     Update Profile
+
                 </button>
 
                 <a
                     href="/profile"
                     class="button button-secondary"
                 >
+
                     Cancel
+
                 </a>
 
             </div>

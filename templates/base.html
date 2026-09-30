@@ -95,9 +95,29 @@
                     {% endif %}
 
 
-                    <a href="/logout">
-                        Logout
-                    </a>
+                    <!-- Logout is a state-changing action,
+                         so it must use POST + CSRF protection. -->
+
+                    <form
+                        method="POST"
+                        action="/logout"
+                        style="display: inline;"
+                    >
+
+                        <input
+                            type="hidden"
+                            name="csrf_token"
+                            value="{{ csrf_token(request) }}"
+                        >
+
+                        <button
+                            type="submit"
+                            class="button button-secondary"
+                        >
+                            Logout
+                        </button>
+
+                    </form>
 
                 {% else %}
 

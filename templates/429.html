@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}
+Too Many Requests - Fast Blog
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="card">
+        <h1 class="page-title">Too Many Requests</h1>
+
+        <p class="page-subtitle">
+            You've made too many requests in a short period of time.
+        </p>
+
+        <div class="message message-error">
+            Please wait a little while before trying again.
+        </div>
+
+        <p class="form-help">
+            This limit helps protect Fast Blog from excessive or automated requests.
+        </p>
+
+        <div class="post-actions">
+            <a href="/" class="button">Back to Home</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

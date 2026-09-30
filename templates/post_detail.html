@@ -144,6 +144,12 @@
             <form method="post"
                   action="/posts/{{ post.slug }}/unlike">
 
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token(request) }}"
+                >
+
                 <button type="submit"
                         class="btn btn-secondary">
                     Unlike
@@ -155,6 +161,12 @@
 
             <form method="post"
                   action="/posts/{{ post.slug }}/like">
+
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token(request) }}"
+                >
 
                 <button type="submit"
                         class="btn btn-primary">
@@ -180,6 +192,12 @@
             <form method="post"
                   action="/posts/{{ post.id }}/delete"
                   data-confirm="Are you sure you want to delete this post?">
+
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token(request) }}"
+                >
 
                 <button type="submit"
                         class="btn btn-danger">
@@ -224,6 +242,12 @@
 
             <form method="post"
                   action="/posts/{{ post.slug }}/comments">
+
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token(request) }}"
+                >
 
                 <div class="form-group">
 
@@ -333,6 +357,12 @@
                           action="/comments/{{ comment.id }}/edit"
                           class="comment-edit-form">
 
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token(request) }}"
+                >
+
                         <div class="form-group">
 
                             <label for="edit-content-{{ comment.id }}">
@@ -395,6 +425,12 @@
                           action="/comments/{{ comment.id }}/delete"
                           data-confirm="Are you sure you want to delete this comment?">
 
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token(request) }}"
+                >
+
                         <button type="submit"
                                 class="btn btn-small btn-danger">
                             Delete
@@ -410,6 +446,12 @@
                     <form method="post"
                           action="/admin/comments/{{ comment.id }}/delete"
                           data-confirm="Are you sure you want to moderate/delete this comment?">
+
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token(request) }}"
+                >
 
                         <button type="submit"
                                 class="btn btn-small btn-danger">

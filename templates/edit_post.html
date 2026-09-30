@@ -1,231 +1,350 @@
 {% extends "base.html" %}
 
 {% block title %}
+
 Edit Post - Fast Blog
+
 {% endblock %}
 
 {% block content %}
 
-<div class="form-container">
+<div class="form-container edit-post-container">
 
-    <div class="card">
+    <div class="card edit-post-card">
 
-        <h1 class="page-title">
-            Edit Post
-        </h1>
+        <h1 class="page-title">
 
-        <p class="page-subtitle">
-            Update your post and save your changes.
-        </p>
+            Edit Post
 
+        </h1>
 
-        {% if message %}
+        <p class="page-subtitle">
 
-            <div class="message message-error">
-                {{ message }}
-            </div>
+            Update your post and save your changes.
 
-        {% endif %}
+        </p>
 
 
-        <form
-            method="POST"
-            action="/posts/{{ post.id }}/edit"
-        >
 
-            <!-- =================================================
-                 TITLE
-                 ================================================= -->
+        {% if message %}
 
-            <div class="form-group">
+            <div class="message message-error">
 
-                <label for="title">
-                    Title
-                </label>
+                {{ message }}
 
-                <input
-                    type="text"
-                    id="title"
-                    name="title"
-                    value="{{ post.title }}"
-                    maxlength="200"
-                    placeholder="Enter your post title"
-                    required
-                >
+            </div>
 
-                <span class="form-help">
-                    Maximum 200 characters.
-                </span>
-
-            </div>
+        {% endif %}
 
 
-            <!-- =================================================
-                 CONTENT
-                 ================================================= -->
 
-            <div class="form-group">
+        <form
 
-                <label for="content">
-                    Content
-                </label>
+            method="POST"
 
-                <textarea
-                    id="content"
-                    name="content"
-                    maxlength="5000"
-                    placeholder="Write your post content here..."
-                    required
-                >{{ post.content }}</textarea>
+            action="/posts/{{ post.id }}/edit"
 
-                <span class="form-help">
-                    Maximum 5000 characters.
-                </span>
+        >
 
-            </div>
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token(request) }}"
+            >
 
+            <!-- =================================================
 
-            <!-- =================================================
-                 STATUS
-                 ================================================= -->
+                 TITLE
 
-            <div class="form-group">
+                 ================================================= -->
 
-                <label for="status">
-                    Status
-                </label>
+            <div class="form-group">
 
-                <select
-                    id="status"
-                    name="status"
-                    required
-                >
+                <label for="title">
 
-                    <option
-                        value="draft"
-                        {% if post.status == "draft" %}
-                            selected
-                        {% endif %}
-                    >
-                        Draft
-                    </option>
+                    Title
 
-                    <option
-                        value="published"
-                        {% if post.status == "published" %}
-                            selected
-                        {% endif %}
-                    >
-                        Published
-                    </option>
+                </label>
 
-                </select>
+                <input
 
-            </div>
+                    type="text"
+
+                    id="title"
+
+                    name="title"
+
+                    value="{{ post.title }}"
+
+                    maxlength="200"
+
+                    placeholder="Enter your post title"
+
+                    required
+
+                >
+
+                <span class="form-help">
+
+                    Maximum 200 characters.
+
+                </span>
+
+            </div>
 
 
-            <!-- =================================================
-                 CATEGORIES
-                 ================================================= -->
 
-            <div class="form-group">
+            <!-- =================================================
 
-                <label for="categories">
-                    Categories
-                </label>
+                 CONTENT
 
-                <select
-                    id="categories"
-                    name="category_ids"
-                    multiple
-                >
+                 ================================================= -->
 
-                    {% for category in categories %}
+            <div class="form-group">
 
-                        <option
-                            value="{{ category.id }}"
-                            {% if category in post.categories %}
-                                selected
-                            {% endif %}
-                        >
-                            {{ category.name }}
-                        </option>
+                <label for="content">
 
-                    {% endfor %}
+                    Content
 
-                </select>
+                </label>
 
-                <span class="form-help">
-                    Hold Ctrl (Windows/Linux) or Command (Mac)
-                    to select multiple categories.
-                </span>
+                <textarea
 
-            </div>
+                    id="content"
 
+                    name="content"
 
-            <!-- =================================================
-                 TAGS
-                 ================================================= -->
+                    maxlength="5000"
 
-            <div class="form-group">
+                    placeholder="Write your post content here..."
 
-                <label for="tags">
-                    Tags
-                </label>
+                    required
 
-                <select
-                    id="tags"
-                    name="tag_ids"
-                    multiple
-                >
+                >{{ post.content }}</textarea>
 
-                    {% for tag in tags %}
+                <span class="form-help">
 
-                        <option
-                            value="{{ tag.id }}"
-                            {% if tag in post.tags %}
-                                selected
-                            {% endif %}
-                        >
-                            {{ tag.name }}
-                        </option>
+                    Maximum 5000 characters.
 
-                    {% endfor %}
+                </span>
 
-                </select>
-
-                <span class="form-help">
-                    Select one or more tags for your post.
-                </span>
-
-            </div>
+            </div>
 
 
-            <!-- =================================================
-                 ACTIONS
-                 ================================================= -->
 
-            <div class="post-actions">
+            <!-- =================================================
 
-                <button
-                    type="submit"
-                    class="button"
-                >
-                    Update Post
-                </button>
+                 STATUS
 
-                <a
-                    href="/posts/{{ post.slug }}"
-                    class="button button-secondary"
-                >
-                    Cancel
-                </a>
+                 ================================================= -->
 
-            </div>
+            <div class="form-group">
 
-        </form>
+                <label for="status">
 
-    </div>
+                    Status
+
+                </label>
+
+                <select
+
+                    id="status"
+
+                    name="status"
+
+                    required
+
+                >
+
+                    <option
+
+                        value="draft"
+
+                        {% if post.status == "draft" %}
+
+                            selected
+
+                        {% endif %}
+
+                    >
+
+                        Draft
+
+                    </option>
+
+                    <option
+
+                        value="published"
+
+                        {% if post.status == "published" %}
+
+                            selected
+
+                        {% endif %}
+
+                    >
+
+                        Published
+
+                    </option>
+
+                </select>
+
+            </div>
+
+
+
+            <!-- =================================================
+
+                 CATEGORIES
+
+                 ================================================= -->
+
+            <div class="form-group">
+
+                <label for="categories">
+
+                    Categories
+
+                </label>
+
+                <select
+
+                    id="categories"
+
+                    name="category_ids"
+
+                    multiple
+
+                >
+
+                    {% for category in categories %}
+
+                        <option
+
+                            value="{{ category.id }}"
+
+                            {% if category in post.categories %}
+
+                                selected
+
+                            {% endif %}
+
+                        >
+
+                            {{ category.name }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+                <span class="form-help">
+
+                    Hold Ctrl (Windows/Linux) or Command (Mac)
+
+                    to select multiple categories.
+
+                </span>
+
+            </div>
+
+
+
+            <!-- =================================================
+
+                 TAGS
+
+                 ================================================= -->
+
+            <div class="form-group">
+
+                <label for="tags">
+
+                    Tags
+
+                </label>
+
+                <select
+
+                    id="tags"
+
+                    name="tag_ids"
+
+                    multiple
+
+                >
+
+                    {% for tag in tags %}
+
+                        <option
+
+                            value="{{ tag.id }}"
+
+                            {% if tag in post.tags %}
+
+                                selected
+
+                            {% endif %}
+
+                        >
+
+                            {{ tag.name }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+                <span class="form-help">
+
+                    Select one or more tags for your post.
+
+                </span>
+
+            </div>
+
+
+
+            <!-- =================================================
+
+                 ACTIONS
+
+                 ================================================= -->
+
+            <div class="post-actions edit-post-actions">
+
+                <button
+
+                    type="submit"
+
+                    class="button"
+
+                >
+
+                    Update Post
+
+                </button>
+
+                <a
+
+                    href="/posts/{{ post.slug }}"
+
+                    class="button button-secondary"
+
+                >
+
+                    Cancel
+
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
 
 </div>
 

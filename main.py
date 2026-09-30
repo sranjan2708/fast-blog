@@ -1,9 +1,12 @@
 from datetime import datetime, timedelta
 import logging
+import secrets
 
-from fastapi import FastAPI, Request, Form, Depends
+
+from fastapi import FastAPI, Request, Form, Depends, HTTPException
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -11,7 +14,11 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
 from pydantic import ValidationError
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
+from config import ENVIRONMENT
 from auth import require_current_user, require_admin
 from database import get_db
 from schemas.user import UserCreate
@@ -32,10 +39,175 @@ from utils import generate_unique_slug
 
 app = FastAPI()
 
+# ==========================================================
+# PHASE 18: TRUSTED HOST SECURITY
+# ==========================================================
+
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=[
+        "127.0.0.1",
+        "localhost"
+    ]
+)
+
+# ==========================================================
+# PHASE 18: RATE LIMITING
+# ==========================================================
+# Rate limits are keyed by the client IP address. The default
+# in-memory storage is appropriate for local development.
+# A shared Redis backend can be configured later for a
+# multi-instance production deployment.
+limiter = Limiter(
+    key_func=get_remote_address,
+    headers_enabled=True
+)
+
+app.state.limiter = limiter
+async def rate_limit_exceeded_handler(
+    request: Request,
+    exc: RateLimitExceeded
+):
+    return templates.TemplateResponse(
+        request=request,
+        name="429.html",
+        context={
+            "retry_after": 60,
+        },
+        status_code=429
+    )
+
+app.add_exception_handler(
+    RateLimitExceeded,
+    rate_limit_exceeded_handler
+)
+
+SECURE_COOKIE = ENVIRONMENT == "production"
+SESSION_DURATION_DAYS = 7
+SESSION_MAX_AGE = SESSION_DURATION_DAYS * 24 * 60 * 60
+
+
+# ==========================================================
+# PHASE 18: SECURITY HEADERS
+# ==========================================================
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+
+    # Prevent MIME-type sniffing
+    response.headers["X-Content-Type-Options"] = "nosniff"
+
+    # Prevent clickjacking
+    response.headers["X-Frame-Options"] = "DENY"
+
+    # Control referrer information
+    response.headers["Referrer-Policy"] = (
+        "strict-origin-when-cross-origin"
+    )
+
+    # Restrict browser capabilities that Fast Blog does not need
+    response.headers["Permissions-Policy"] = (
+        "camera=(), "
+        "microphone=(), "
+        "geolocation=(), "
+        "payment=()"
+    )
+
+    # Basic Content Security Policy
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "script-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; "
+        "font-src 'self'; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'; "
+        "frame-ancestors 'none'"
+    )
+
+    # HSTS should only be enabled when HTTPS is actually being used.
+    if SECURE_COOKIE:
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
+
+    return response
+
 # Phase 16: Serve frontend static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
+
+# ==========================================================
+# PHASE 18: CSRF PROTECTION
+# ==========================================================
+
+CSRF_COOKIE_NAME = "csrf_token"
+CSRF_TOKEN_MAX_AGE = SESSION_MAX_AGE
+
+
+def get_csrf_token(request):
+    """
+    Return the CSRF token for the current request.
+
+    If the browser does not have a CSRF cookie yet, generate a
+    cryptographically secure token and remember it on the request.
+    The middleware below will place it in the response cookie.
+    """
+    token = request.cookies.get(CSRF_COOKIE_NAME)
+
+    if not token:
+        token = secrets.token_urlsafe(32)
+        request.state.csrf_token = token
+
+    return token
+
+
+templates.env.globals["csrf_token"] = get_csrf_token
+
+
+@app.middleware("http")
+async def csrf_cookie_middleware(request: Request, call_next):
+    """
+    Add the CSRF cookie to responses when a template requested a token.
+    """
+    response = await call_next(request)
+
+    token = getattr(request.state, "csrf_token", None)
+
+    if token:
+        response.set_cookie(
+            key=CSRF_COOKIE_NAME,
+            value=token,
+            httponly=True,
+            secure=SECURE_COOKIE,
+            samesite="lax",
+            max_age=CSRF_TOKEN_MAX_AGE,
+            path="/"
+        )
+
+    return response
+
+
+def validate_csrf_token(request: Request, submitted_token: str):
+    """
+    Validate the CSRF token submitted by a state-changing form.
+    The token in the form must match the token in the CSRF cookie.
+    """
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+
+    if (
+        not cookie_token
+        or not submitted_token
+        or not secrets.compare_digest(cookie_token, submitted_token)
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Invalid CSRF token."
+        )
+
 
 # ==========================================================
 # PHASE 17: GLOBAL ERROR HANDLING
@@ -248,13 +420,17 @@ def register_page(request: Request):
 
 
 @app.post("/register", response_class=HTMLResponse)
+@limiter.limit("10/hour")
 def register_user(
     request: Request,
     username: str = Form(),
     email: str = Form(),
     password: str = Form(),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    csrf_token: str = Form(default=""),
 ):
+    validate_csrf_token(request, csrf_token)
+
     try:
         user_data = UserCreate(
             username=username,
@@ -382,12 +558,16 @@ def login_page(request: Request):
 
 
 @app.post("/login", response_class=HTMLResponse)
+@limiter.limit("5/minute")
 def login_user(
     request: Request,
     email: str = Form(),
     password: str = Form(),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    csrf_token: str = Form(default=""),
 ):
+    validate_csrf_token(request, csrf_token)
+
     user = db.query(User).filter(
         User.email == email
     ).first()
@@ -419,7 +599,7 @@ def login_user(
     new_session = UserSession(
         session_id=session_id,
         user_id=user.id,
-        expires_at=datetime.utcnow() + timedelta(days=7)
+        expires_at=datetime.utcnow() + timedelta(days=SESSION_DURATION_DAYS)
     )
 
     db.add(new_session)
@@ -454,8 +634,9 @@ def login_user(
         key="session_id",
         value=session_id,
         httponly=True,
-        secure=False,
-        samesite="lax"
+        secure=SECURE_COOKIE,
+        samesite="lax",
+        max_age=SESSION_MAX_AGE
     )
 
     return response
@@ -540,8 +721,11 @@ def edit_profile(
     theme: str = Form(),
     posts_per_page: int = Form(),
     user: User = Depends(require_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    csrf_token: str = Form(default=""),
 ):
+    validate_csrf_token(request, csrf_token)
+
     # ------------------------------------------------------
     # Clean user input
     # ------------------------------------------------------
@@ -711,6 +895,7 @@ def create_post_page(
 # ==========================================================
 
 @app.post("/posts/create", response_class=HTMLResponse)
+@limiter.limit("10/minute")
 def create_post(
     request: Request,
     title: str = Form(),
@@ -719,8 +904,11 @@ def create_post(
     category_ids: list[int] = Form(default=[]),
     tag_ids: list[int] = Form(default=[]),
     user: User = Depends(require_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    csrf_token: str = Form(default=""),
 ):
+    validate_csrf_token(request, csrf_token)
+
     try:
         post_data = PostCreate(
             title=title,
@@ -1135,6 +1323,7 @@ def edit_post_page(
 # ==========================================================
 
 @app.post("/posts/{post_id}/edit", response_class=HTMLResponse)
+@limiter.limit("10/minute")
 def edit_post(
     request: Request,
     post_id: int,
@@ -1144,8 +1333,11 @@ def edit_post(
     category_ids: list[int] = Form(default=[]),
     tag_ids: list[int] = Form(default=[]),
     user: User = Depends(require_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    csrf_token: str = Form(default=""),
 ):
+    validate_csrf_token(request, csrf_token)
+
     post = db.query(Post).filter(
         Post.id == post_id
     ).first()
@@ -1417,11 +1609,16 @@ def post_detail(
 # ==========================================================
 
 @app.post("/posts/{slug}/like")
+@limiter.limit("30/minute")
 def like_post(
+    request: Request,
     slug: str,
     user: User = Depends(require_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    csrf_token: str = Form(default=""),
 ):
+    validate_csrf_token(request, csrf_token)
+
     # ------------------------------------------------------
     # Find the post using its slug
     # ------------------------------------------------------
@@ -1488,11 +1685,16 @@ def like_post(
 # ==========================================================
 
 @app.post("/posts/{slug}/unlike")
+@limiter.limit("30/minute")
 def unlike_post(
+    request: Request,
     slug: str,
     user: User = Depends(require_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    csrf_token: str = Form(default=""),
 ):
+    validate_csrf_token(request, csrf_token)
+
     # ------------------------------------------------------
     # Find the post using its slug
     # ------------------------------------------------------
@@ -1545,13 +1747,17 @@ def unlike_post(
     "/posts/{slug}/comments",
     response_class=HTMLResponse
 )
+@limiter.limit("20/minute")
 def create_comment(
     request: Request,
     slug: str,
     content: str = Form(),
     user: User = Depends(require_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    csrf_token: str = Form(default=""),
 ):
+    validate_csrf_token(request, csrf_token)
+
     # ------------------------------------------------------
     # Find the post using its slug
     # ------------------------------------------------------
@@ -1825,13 +2031,17 @@ def edit_comment_page(
     "/comments/{comment_id}/edit",
     response_class=HTMLResponse
 )
+@limiter.limit("20/minute")
 def edit_comment(
     request: Request,
     comment_id: int,
     content: str = Form(),
     user: User = Depends(require_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    csrf_token: str = Form(default=""),
 ):
+    validate_csrf_token(request, csrf_token)
+
     # ------------------------------------------------------
     # Find the comment
     # ------------------------------------------------------
@@ -2007,11 +2217,16 @@ def edit_comment(
 # ==========================================================
 
 @app.post("/comments/{comment_id}/delete")
+@limiter.limit("20/minute")
 def delete_comment(
+    request: Request,
     comment_id: int,
     user: User = Depends(require_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    csrf_token: str = Form(default=""),
 ):
+    validate_csrf_token(request, csrf_token)
+
     # ------------------------------------------------------
     # Find the comment
     # ------------------------------------------------------
@@ -2110,11 +2325,16 @@ def delete_comment(
 # ==========================================================
 
 @app.post("/admin/comments/{comment_id}/delete")
+@limiter.limit("20/minute")
 def admin_delete_comment(
+    request: Request,
     comment_id: int,
     user: User = Depends(require_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    csrf_token: str = Form(default=""),
 ):
+    validate_csrf_token(request, csrf_token)
+
     # ------------------------------------------------------
     # Find the comment
     # ------------------------------------------------------
@@ -2175,11 +2395,16 @@ def admin_delete_comment(
 # ==========================================================
 
 @app.post("/posts/{post_id}/delete")
+@limiter.limit("10/minute")
 def delete_post(
+    request: Request,
     post_id: int,
     user: User = Depends(require_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    csrf_token: str = Form(default=""),
 ):
+    validate_csrf_token(request, csrf_token)
+
     post = db.query(Post).filter(
         Post.id == post_id
     ).first()
@@ -2260,11 +2485,15 @@ def delete_post(
 # Logout
 # ==========================================================
 
-@app.get("/logout")
+@app.post("/logout")
+@limiter.limit("10/minute")
 def logout(
     request: Request,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    csrf_token: str = Form(default=""),
 ):
+    validate_csrf_token(request, csrf_token)
+
     session_id = request.cookies.get("session_id")
 
     if session_id:
@@ -2285,7 +2514,16 @@ def logout(
     )
 
     response.delete_cookie(
-        key="session_id"
+        key="session_id",
+        secure=SECURE_COOKIE,
+        samesite="lax"
+    )
+
+    response.delete_cookie(
+        key=CSRF_COOKIE_NAME,
+        secure=SECURE_COOKIE,
+        samesite="lax",
+        path="/"
     )
 
     return response

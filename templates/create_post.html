@@ -18,7 +18,6 @@ Create Post - Fast Blog
             Share your thoughts and ideas with the Fast Blog community.
         </p>
 
-
         {% if message %}
 
             <div class="message message-error">
@@ -27,11 +26,16 @@ Create Post - Fast Blog
 
         {% endif %}
 
-
         <form
             method="POST"
             action="/posts/create"
         >
+
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token(request) }}"
+            >
 
             <!-- =================================================
                  TITLE
@@ -58,7 +62,6 @@ Create Post - Fast Blog
 
             </div>
 
-
             <!-- =================================================
                  CONTENT
                  ================================================= -->
@@ -82,7 +85,6 @@ Create Post - Fast Blog
                 </span>
 
             </div>
-
 
             <!-- =================================================
                  STATUS
@@ -117,7 +119,6 @@ Create Post - Fast Blog
 
             </div>
 
-
             <!-- =================================================
                  CATEGORIES
                  ================================================= -->
@@ -151,7 +152,6 @@ Create Post - Fast Blog
 
             </div>
 
-
             <!-- =================================================
                  TAGS
                  ================================================= -->
@@ -183,7 +183,6 @@ Create Post - Fast Blog
                 </span>
 
             </div>
-
 
             <!-- =================================================
                  ACTIONS
